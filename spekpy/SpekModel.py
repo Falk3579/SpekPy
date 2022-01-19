@@ -124,11 +124,18 @@ class SpekModel:
             if physics.split('-')[-1] == 'diff':
                 shape = 'uni'
                 diffuse = True
+                brsrc = 'nist'
+            elif physics.split('-')[-1] == 'classical':
+                shape = 'uni'
+                diffuse = False
+                brsrc = 'classical'
             else:
                 shape = physics.split('-')[-1]
                 diffuse = False
+                brsrc = 'nist'
             s = aniso.SpekAniso(kvp=E0,x=x,y=y,z=z,target=anode_material,
-                        th=anode_angle,k=self.k,shape=shape,diffuse=diffuse)
+                        th=anode_angle,k=self.k,shape=shape,
+                        diffuse=diffuse,brsrc=brsrc)
             self.brem_k = s.brem_k
             self.char_k = s.char_k
             self.brem_kt = s.brem_kt

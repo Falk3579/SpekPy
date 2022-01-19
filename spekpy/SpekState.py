@@ -16,7 +16,6 @@ class State(object):
     def __init__(self):
         self.comment = None
         self.spekpy_version = None
-        self.tmp_results = None
         self.script_path = None
         self.external_spectrum = ExternalSpectrumDef()
         self.model_parameters = ModelParameterDef()
@@ -24,14 +23,15 @@ class State(object):
         self.filtration = FiltrationDef()
         self.flags = SpekpyFlagsDef()
 
-    def export_spectrum_to_disk(self, file_name, delimiter):
+    def export_spectrum_to_disk(self, file_name, delimiter, 
+                                std_results, spk_char):
         """
         A method to export the current spectrum to a file on the disk
 
         :param str file_name: The name of the spectrum file
-        :param str delimeter: The delimeter to delimit values in text file
+        :param str delimiter: The delimeter to delimit values in text file
         :return:  
-        """
+        """      
         if not file_name:
             file_name = 'spekpy_export ' + get_current_time_stamp(
                 mode='file') + Const.extension_export_spectrum_file
@@ -39,12 +39,12 @@ class State(object):
         header = 'Header Begin\n'
         header = header + self.get_basic_info_str(
             file_type='exported_spectrum') + '\n'
-        header = header + self.get_current_state_str(mode='full')
+        header = header + self.get_current_state_str('full', std_results)
         header = header + 'Spectrum Units:\n[keV], [Photons keV^-1 cm^-2],' \
             ' [Photons keV^-1 cm^-2]' + '\n'
         header = header + 'Header End: ' + str(len(header.split('\n'))) \
             + ' lines'
-        data = [self.tmp_results.k, self.tmp_results.spk, self.tmp_spk_char]
+        data = [std_results.k, std_results.spk, spk_char]
         print("spectrum name")
         print(file_name)
         write_spectrum_to_disk(header, data, file_name, delimiter, fmt='%.4f')
@@ -107,13 +107,13 @@ class State(object):
         filt_str = fmt_param('Filtration', filt['filters'], 'mm')
         return filt_str
 
-    def get_current_results_str(self):
+    def get_current_results_str(self, std_results):
         """
         A method to format the current standard results into a single string
-
+        
         :return str result_str: A string with the standard results
         """
-        res = self.tmp_results.__dict__
+        res = std_results.__dict__
         result_str = fmt_param('Fluence', res['flu'], 'Photons cm^-2', 
                                decimal_places=4) + ' ' + \
                      fmt_param('Air Kerma', res['kerma'], 'uGy', 
@@ -139,15 +139,15 @@ class State(object):
                                decimal_places=4)
         return result_str
 
-    def get_spectrum_str(self):
+    def get_spectrum_str(self, std_results):
         """
         A method to format the spectrum energy-fluence values into a single 
         string
 
         :return str spectrum_str: A string with the spectrum details
         """
-        k = self.tmp_results.k
-        spk = self.tmp_results.spk
+        k = std_results.k
+        spk = std_results.spk
         spectrum_str = 'Spectrum units:' + '\n' + \
             '[keV]; [Photons keV cm^-2]' + '\n'
 
@@ -158,11 +158,12 @@ class State(object):
         spectrum_str = spectrum_str + spk_str
         return spectrum_str
 
-    def get_current_state_str(self, mode):
+    def get_current_state_str(self, mode, std_results=None):
         """
         A method to summarize the current state of the spekpy instance as a 
         single string
-
+        
+        :mode str mode: whether 'full' or 'minimal' output 
         :return str current_state_str: A string with spekpy's current state
         """
 
@@ -180,7 +181,7 @@ class State(object):
             current_state_str = current_state_str + 'Outputs\n' \
                 + '-' * 7 + '\n'
             current_state_str = current_state_str + \
-                self.get_current_results_str() + '\n'
+                self.get_current_results_str(std_results) + '\n'
 
         return current_state_str
 

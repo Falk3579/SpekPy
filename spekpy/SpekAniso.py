@@ -22,12 +22,15 @@ from scipy.ndimage.interpolation import map_coordinates
 class SpekAniso:
 
     
-    def __init__(self,target,shape,diffuse,x,y,z,k,th,kvp):
+    def __init__(self,target,shape,diffuse,brsrc,x,y,z,k,th,kvp):
         """Constructor method for the SpekAniso class 
 
         :param string target: The abbreviation symbols for the target element
         :param string shape: The brems shape-function 
             options: ('kqp', 'sim', 'uni' or 'casim')
+        :param bool diffuse: Whether instant diffusion is assumed for electrons
+        :param string brsrc: The source of first differential brem xsection
+            options: ('nist' or 'classical')
         :param float x: The lateral position in anode-cathode direction [cm]
         :param float y: The lateral position in other direction [cm]
         :param float z: The focus-to-detection distance [cm]
@@ -47,6 +50,12 @@ class SpekAniso:
         self.amu = target_amu[target]
         # Electron mass [keV/c**2]
         self.me = 510.9989 
+        # Classical electron radius [cm]
+        self.re = 2.81794e-13
+        #  Reduced Planck constant [kev s]
+        self.hbar = 6.626e-34/(2*pi*1.602e-16)
+        # Speed of light [cm/s]
+        self.c = 2.998e10
         # X-ray energy bins
         self.k = k
         # Incident electron energy
@@ -55,6 +64,8 @@ class SpekAniso:
         self.shape = shape
         # Whether instant diffusion is assumed
         self.diffuse = diffuse
+        # The first-differential bremsstrahlung cross-section to use
+        self.brsrc = brsrc
         # The atomic nu ber of the target
         self.Z = target_Z[target]
         # Angles for x and y axes w.r.t z
@@ -298,35 +309,48 @@ class SpekAniso:
         :return array sig_tip: 1D array of bremsstrahlung cross-sections at tip
             corresponding to E_grid = k_grid [cm**-2.keV**-1]
         """ 
-        # Read the NIST bremsstrahlung cross-sections dsig/dx
-        filepath = os.path.join(self.dirpath, 'NIST.npz')
-        data = load(filepath)
-        # Tabulated initial electron kinetic energies
-        E_NIST = data['E'].astype('float64')
-        # Tabulated ratios of photon emission to electron kinetic energy
-        u_NIST = data['u'].astype('float64')
-        # Tabulated scaled cross-section, chi
-        chi_NIST = data[ 'chi' + str(self.Z) ].astype('float64')
-        # Create interpolation function
-        chi_fun = interp.RegularGridInterpolator( (log(E_NIST), u_NIST), 
-                        chi_NIST, bounds_error = False, fill_value = 0)
-        # Cross-section [cm**-2.keV**-1] calculated on E/k grid
-        grid = zeros( [E_grid.shape[0], E_grid.shape[1], 2] )
-        grid[:,:,0] = log(E_grid)
-        grid[:,:,1] = k_grid / E_grid
-        grid = squeeze(grid)
-        E_in = (E_grid + self.me) / self.me
-        p_in = sqrt( E_in**2 - 1. )
-        sig = ( (self.Z / (p_in / E_in))**2 / k_grid) * chi_fun(grid) * 1e-27
-        # Cross-section [cm**-2.keV**-1] calculated at tip (E = k)
-        grid_tip = zeros([self.k.size, 2])
-        grid_tip[:,0] = log(self.k)
-        grid_tip[:,1] = ones( [self.k.size] )
-        grid_tip = squeeze(grid_tip)
-        E_in = (self.k + self.me) / self.me
-        p_in = sqrt( E_in**2 - 1. )
-        sig_tip = ( ( self.Z / (p_in / E_in) )**2 / self.k ) * \
-            chi_fun(grid_tip) * 1e-27
+        if self.brsrc == 'nist': # NIST cross.section
+            # Read the NIST bremsstrahlung cross-sections dsig/dx
+            filepath = os.path.join(self.dirpath, 'NIST.npz')
+            data = load(filepath)
+            # Tabulated initial electron kinetic energies
+            E_NIST = data['E'].astype('float64')
+            # Tabulated ratios of photon emission to electron kinetic energy
+            u_NIST = data['u'].astype('float64')
+            # Tabulated scaled cross-section, chi
+            chi_NIST = data[ 'chi' + str(self.Z) ].astype('float64')
+            # Create interpolation function
+            chi_fun = interp.RegularGridInterpolator( (log(E_NIST), u_NIST), 
+                            chi_NIST, bounds_error = False, fill_value = 0)
+            # Cross-section [cm**-2.keV**-1] calculated on E/k grid
+            grid = zeros( [E_grid.shape[0], E_grid.shape[1], 2] )
+            grid[:,:,0] = log(E_grid)
+            grid[:,:,1] = k_grid / E_grid
+            grid = squeeze(grid)
+            E_in = (E_grid + self.me) / self.me
+            p_in = sqrt( E_in**2 - 1. )
+            sig = ( (self.Z / (p_in / E_in))**2 / k_grid) * chi_fun(grid) * 1e-27
+            # Cross-section [cm**-2.keV**-1] calculated at tip (E = k)
+            grid_tip = zeros([self.k.size, 2])
+            grid_tip[:,0] = log(self.k)
+            grid_tip[:,1] = ones( [self.k.size] )
+            grid_tip = squeeze(grid_tip)
+            E_in = (self.k + self.me) / self.me
+            p_in = sqrt( E_in**2 - 1. )
+            sig_tip = ( ( self.Z / (p_in / E_in) )**2 / self.k ) * \
+                chi_fun(grid_tip) * 1e-27
+        elif self.brsrc == 'classical': # Kramers classical cross-section
+            # Note: we work in units of keV and cm NOT J, kg, m
+            # where: me[keV/c^2] = me[kg]*c[m/s]**2/1.602e-16
+            # and: hbar[keV s] = hbar[J s]/1.602e-16
+            gamma_grid=(E_grid + self.me)/self.me
+            betasq_grid=1-gamma_grid**(-2)
+            gamma=(self.k+self.me)/self.me
+            betasq=1-gamma**(-2)
+            sig = (self.Z**2 / (k_grid * betasq_grid)) \
+                * (16e0*pi*self.me*self.re**3/(3*sqrt(3)*self.hbar*self.c)) 
+            sig_tip = (self.Z**2 / (self.k * betasq)) \
+                * (16e0*pi*self.me*self.re**3/(3*sqrt(3)*self.hbar*self.c)) 
         return sig,sig_tip
  
     
@@ -739,7 +763,7 @@ class SpekAniso:
         mu_times_x = zeros([self.k.size,x.size])
         char_kx = zeros([self.k.size,x.size])
         ## Self-filtration of x-rays produced in the target
-        
+
         if self.E0 > UL1: # If L1-shell ionization is possible, do calculation
             NL1 = zeros([kL1.size])
             for i in range(kL1.size):
@@ -753,6 +777,8 @@ class SpekAniso:
                 # The bin index of the line
                 ind = floor( ( kL1[i] - (self.k[0] - dk*0.5) ) 
                             / dk ).astype(int)
+                if ind<0:
+                    continue
                 # Adds characteristic photons per solid angle per keV to bin
                 char_k[ind] = char_k[ind] + NL1[i] * PL1[i] / dk
                 # Adds characteristic photons depth distrubution per solid 
@@ -760,7 +786,7 @@ class SpekAniso:
                 char_kx[ind,:] = char_kx[ind,:] + \
                     (1./(4.*pi)) * (L1dist * attn_anode / csda_range) \
                         * PL1[i] / dk
-      
+    
         if self.E0 > UL2: # If L2-shell ionization is possible, do calculation
             NL2 = zeros([kL2.size])
             for i in range(kL2.size):
@@ -774,6 +800,8 @@ class SpekAniso:
                 # The bin index of the line
                 ind = floor( ( kL2[i] - (self.k[0] - dk*0.5) ) 
                             / dk ).astype(int)
+                if ind<0:
+                    continue
                 # Adds characteristic photons per solid angle per keV to bin
                 char_k[ind] = char_k[ind] + NL2[i] * PL2[i] / dk
                 # Adds the characteristic photons depth distrubution per solid 
@@ -795,6 +823,8 @@ class SpekAniso:
                 # The bin index of the line
                 ind = floor( ( kL3[i] - (self.k[0] - dk*0.5) ) \
                             / dk ).astype(int)
+                if ind<0:
+                    continue
                 # Adds characteristic photons per solid angle per keV to bin
                 char_k[ind] = char_k[ind] + NL3[i] * PL3[i] / dk
                 # Adds the characteristic photons depth distrubution per solid
@@ -816,6 +846,8 @@ class SpekAniso:
                 # The bin index of the line
                 ind = floor((kK[i] - (self.k[0] - dk * 0.5)) \
                             / dk).astype(int)
+                if ind<0:
+                    continue
                 # Adds characteristic photons per solid angle per keV to bin
                 char_k[ind] = char_k[ind] + NK[i]*PK[i]/dk
                 # Adds the characteristic photons depth distrubution per solid
@@ -823,7 +855,7 @@ class SpekAniso:
                 char_kx[ind,:] = char_kx[ind,:] + \
                     (1./(4.*pi)) * (Kdist * attn_anode / csda_range) \
                         * PK[i] / dk
-    
+
         for i in range(self.k.size):
             # linear attenuation coef. times depth for energies and depths
             mu_times_x[i,:] = exp( mac_target(self.k[i]) ) * rho_target * x

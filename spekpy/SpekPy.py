@@ -108,7 +108,8 @@ class Spek:
         """
         aliases = {'legacy':'spekcalc','default':'spekpy-v1',
             'kqp':'spekpy-v2-kqp','sim':'spekpy-v2-sim','uni':'spekpy-v2-uni',
-            'casim':'spekpy-v2-casim','diff':'spekpy-v2-diff'}
+            'casim':'spekpy-v2-casim','diff':'spekpy-v2-diff',
+            'classical':'spekpy-v2-classical'}
         aliases_list = list(aliases.keys())
         for alias_name in aliases_list:
             aliases[aliases[alias_name]] = aliases[alias_name]
@@ -300,8 +301,8 @@ class Spek:
         :return:
         """
         if mode == 'full':
-            self.state.tmp_results = self.get_std_results()
-            summarization = self.state.get_current_state_str(mode)
+            std_results = self.get_std_results()
+            summarization = self.state.get_current_state_str(mode, std_results)
         elif mode == 'minimal':
             summarization = self.state.get_current_state_str(mode)
         else:
@@ -806,20 +807,22 @@ class Spek:
             spectrum
         :return:
         """
-        path, file_name, slash = path_file(file_name)
+        path, file_name_nopath, slash = path_file(file_name)
         
         if path == '':
-            file_name = get_script_path() + slash + file_name
+            file_name = get_script_path() + slash + file_name_nopath
 
         if comment:
             self.state.comment = comment
         if comment is None: 
             self.state.comment = ''
 
-        self.state.tmp_results = self.get_std_results()
-        self.state.tmp_spk_char = self.get_spk(brem=False)
+        std_results = self.get_std_results()
+        spk_char = self.get_spk(brem=False)
 
-        self.state.export_spectrum_to_disk(file_name, delim)
+        self.state.export_spectrum_to_disk(file_name, delim, 
+                                           std_results, spk_char)
+
 
     @staticmethod
     def clone(spekpy_obj):

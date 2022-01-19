@@ -165,7 +165,7 @@ def get_script_path():
     :param:
     :return str script_path: The path of the script
     """
-    script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
+    script_path = os.getcwd()
     return script_path
 
 def is_file(file_name, base_path):
