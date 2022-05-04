@@ -106,9 +106,10 @@ class SpekModel:
         mu_data = spekpy_obj.mu_data 
 
         # Calculate the set of photon energies to calculate based on specified
-        # ... bin width
+        # ... bin width and bin shift (lowest energy must be higher than 1 keV)
+        eps = 1e-6 # Small float offset to avoid floating point rounding errors
         self.number_of_photon_energy_bins = \
-            int(((E0 - dk * 0.5) - 1.0) / dk) + 1
+            int(((E0 - dk + shift*dk) - 1.0 + eps) / dk) + 1
         self.k = \
             np.linspace(E0 - dk * (self.number_of_photon_energy_bins - 0.5),
                              E0 - dk * 0.5, 

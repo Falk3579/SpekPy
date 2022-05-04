@@ -29,7 +29,37 @@ class Spek:
             kvp=None, th=None, dk=None, mu_data_source=None, physics=None,
             x=None, y=None, z=None, mas=None, brem=None, char=None, obli=None,
             comment=None, targ=None, shift=None, init_default=True):
+        """Constructor method for the Spek class 
+
+        SEE THE WIKI PAGES FOR MORE INFO:
+        https://bitbucket.org/spekpy/spekpy_release/wiki/Further_information
         
+        :param float kvp: tube potential [kV] (default: depends on target)
+        :param float th: anode angle [degrees] (default: 12 degrees)
+        :param float dk: energy bin width [keV] (default: 0.5 keV)
+        :param string: mu_data_source (default: depends on physics model)
+            options: ('pene' or 'nist')
+        :param float physics: physics model (default: 'casim')
+            options: ('casim', 'kqp', 'spekpy-v1', 'spekcalc',
+                      'diff', 'uni', 'sim', 'classical')
+        :param float x: displacement from central axis in anode-cathode 
+            direction [cm] (default: 0 cm)
+        :param float y: displacement from central axis in orthogonal 
+            direction [cm] (default: 0 cm)
+        :param float z: focus-to-detector distance [cm] (default: 100 cm)
+        :param float mas: the tube current-time product [mAs] (default: 1 mAs)
+        :param logical brem: whether bremsstrahlung x rays requested 
+            (default: true)
+        :param logical char: whether characteristic x rays requested
+            (default: true)
+        :param logical obli: whether increased oblique paths through filtration
+            are assumed for off axis positions (default: true)
+        :param string comment: any text annotation the user wishes to add
+        :param string targ: the anode target material (default: 'W')
+            options: ('W', 'Mo', or 'Rh')
+        :param float shift: optional fraction of an energy bin to shift the
+            energy bins (useful when matching to measurements) (default: 0.0)
+        """
         self._rg, self._pe, self._ne, self._line_data, self._nist_brem_data \
             = data
         self.state = State()
