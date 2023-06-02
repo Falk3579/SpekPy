@@ -1,10 +1,10 @@
 from setuptools import setup
 
 setup(name='spekpy',
-      version='2.0.8',
+      version='2.0.9',
       description='A Python software toolkit for modelling the x-ray spectra from x-ray tubes',
       url='https://bitbucket.org/spekpy/spekpy_release',
-      author='Robert Bujila & Gavin Poludniowski',
+      author='Gavin Poludniowski & Robert Bujila',
       author_email='gpoludniowski@gmail.com',
       license='MIT License',
       install_requires=['scipy','matplotlib'],

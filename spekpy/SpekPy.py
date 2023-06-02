@@ -109,10 +109,10 @@ class Spek:
                                     "(kvp = 10 to 1000 kV)")
             else:
                 if targ == 'W':
-                    if kvp<20. or kvp>300.:
+                    if kvp<10. or kvp>500.:
                         raise Exception("Requested kVp is out of range for "
                                         "selected physics model and target"
-                                        "(kvp = 30 to 300 kV)")
+                                        "(kvp = 10 to 500 kV)")
                 else:
                     if kvp<20. or kvp>50.:
                         raise Exception("Requested kVp is out of range for "

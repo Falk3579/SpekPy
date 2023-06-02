@@ -19,9 +19,9 @@ def get_current_time_stamp(mode='str'):
 
     :return str : The current time stamp
     """
-    if mode is 'str':
+    if mode == 'str':
         time_stamp = dt.fromtimestamp(tm.time()).strftime('%Y-%m-%d %H:%M:%S')
-    elif mode is 'file':
+    elif mode == 'file':
         time_stamp = dt.fromtimestamp(tm.time()).strftime('%Y-%m-%d_%H-%M-%S')
     return time_stamp
 
