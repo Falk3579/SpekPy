@@ -8,7 +8,7 @@ from numpy import pi, nan
 from numpy import array, zeros, ones, insert, squeeze, meshgrid, arange
 from numpy import load, finfo, argmax, where, linspace, matmul
 import scipy.interpolate as interp
-from scipy.ndimage.interpolation import map_coordinates
+from scipy.ndimage import map_coordinates
 
 #[1] Omar A, Andreo P and Poludniowski G. A model for the emission of K 
 # ... and L x rays from an x-ray tube. NIM B 2018;437:36-47.
@@ -203,7 +203,7 @@ class SpekAniso:
             theta_e_data = data['theta_e'].astype('float64')
             pomega_e_data = data['pomega_e'].astype('float64')
             # Calculate the diversion for each electron energy and depth
-            # numpy where and divide used to avoid divide vy zero warning
+            # numpy where and divide used to avoid divide by zero warning
             diversion_num = sum( pomega_e_data * 
                     abs( sin( deg2rad( theta_e_data[:,None,None,None] ) ) ),
                     axis=0)

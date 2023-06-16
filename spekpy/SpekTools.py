@@ -157,7 +157,15 @@ def generate_spectrum(spectrum_parameters, model_parameters,
         bet = np.arctan(y / z)  # Direction cosine angle in y-dir
         alp = np.arctan(x / z) # Direction cosine angle in x-dir
 
-        if alp < np.pi / 2 and bet < np.pi / 2:
+        # anode angle [degrees]
+        th = model_parameters.th 
+        # In-plane angle (i.e., x-z plane) w.r.t. to normal to anode surface 
+        if th is None:
+            alpp = np.nan # Undefined (imported spectrum)
+        else:
+            alpp = np.pi / 2 - th * np.pi / 180 - alp # Can be defined
+
+        if not np.abs(alpp) > np.pi / 2 and not abs(bet) > np.pi / 2:
             # Ratio of filter path-length to filter thickness
             if oblique:
                 fo = np.sqrt(1.0 + np.tan(alp) ** 2 + np.tan(bet) ** 2) 
@@ -171,10 +179,6 @@ def generate_spectrum(spectrum_parameters, model_parameters,
                 fext = 1.0
 
             if model.anode_self_filtration is not None:
-                # anode angle [degrees]
-                th = model_parameters.th 
-                # Anode take-off angle
-                alpp = np.pi / 2 - th * np.pi / 180 - alp
                 # Ratio of escape path to depth in target
                 ft = np.sqrt(1.0 + np.tan(bet) ** 2 + np.tan(alpp) ** 2)
                 # Self filtration by target
@@ -195,6 +199,8 @@ def generate_spectrum(spectrum_parameters, model_parameters,
 
         else:
             spk = np.zeros(np.size(model.k))
+            warnings.resetwarnings()
+            warnings.warn('Zero emission for the user\'s geometrical inputs')
         return spk
 
 
