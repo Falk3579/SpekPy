@@ -858,7 +858,8 @@ class SpekAniso:
 
         for i in range(self.k.size):
             # linear attenuation coef. times depth for energies and depths
-            mu_times_x[i,:] = exp( mac_target(self.k[i]) ) * rho_target * x
+            mu_times_x[i,:] = exp( mac_target( log(self.k[i]) ) ) \
+                * rho_target * x
             # Attenuation factor to escape target, for the photon energy and 
             # ... the depth bins for the take-off angle
             attn_factor =  exp( -mu_times_x[i,:] * 
