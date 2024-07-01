@@ -3,12 +3,20 @@ from __future__ import print_function, division, absolute_import
 ##################################
 import os
 from numpy import sin, cos, arctan, arccos, deg2rad, degrees
-from numpy import exp, sqrt, log, sum, abs, floor, round, divide, trapz
+from numpy import exp, sqrt, log, sum, abs, floor, round, divide
 from numpy import pi, nan
 from numpy import array, zeros, ones, insert, squeeze, meshgrid, arange
 from numpy import load, finfo, argmax, where, linspace, matmul
 import scipy.interpolate as interp
 from scipy.ndimage import map_coordinates
+from scipy import __version__ as sci_vers
+major = int(sci_vers.split('.')[0])
+minor = int(sci_vers.split('.')[1])
+if major > 1 or (minor > 5 and major ==1):
+    from scipy.integrate import trapezoid as trapz
+else:
+    from scipy.integrate import trapz as trapz
+
 
 #[1] Omar A, Andreo P and Poludniowski G. A model for the emission of K 
 # ... and L x rays from an x-ray tube. NIM B 2018;437:36-47.
@@ -741,7 +749,7 @@ class SpekAniso:
         # Define the CSDA range in units of cm
         csda_range = range_target(self.E0) / rho_target
         # Define the maximum electron penetration depth considered
-        dmax = 20.*csda_range 
+        dmax = squeeze(20.*csda_range)
         
         # Define number of depths to sample
         if self.shape == 'kqp' or self.shape == 'sim':
@@ -750,7 +758,7 @@ class SpekAniso:
             N = 50 # Lower as otherwise execution time becomes similar to brems
           
         # Depth sampling spacing  
-        dx = csda_range / float(N)
+        dx = squeeze(csda_range / float(N))
         # Array of depths to sample
         x = arange(0,dmax+0.5*dx,dx)
       

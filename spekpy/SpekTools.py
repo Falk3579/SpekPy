@@ -3,16 +3,24 @@ from __future__ import print_function, division, absolute_import
 ##################################
 from . import __version__
 import numpy as np
-from spekpy.DataTables import MuData, MuEnAirData
-from scipy import integrate, optimize, interpolate
-import spekpy.SpekConstants as Const
-from spekpy.IO import write_json_to_disk, full_file
-from spekpy.DataTables import get_atomic_weight_data
-from collections import OrderedDict as ord_dct
+from scipy import optimize, interpolate
+from scipy import __version__ as sci_vers
+major = int(sci_vers.split('.')[0])
+minor = int(sci_vers.split('.')[1])
+if major > 1 or (minor > 5 and major ==1):
+    from scipy.integrate import trapezoid as trapz
+    from scipy.integrate import simpson as simps
+else:
+    from scipy.integrate import trapz as trapz
+    from scipy.integrate import simps as simps
 import re
 import warnings
 from copy import deepcopy
-
+from collections import OrderedDict as ord_dct
+import spekpy.SpekConstants as Const
+from spekpy.DataTables import MuData, MuEnAirData
+from spekpy.IO import write_json_to_disk, full_file
+from spekpy.DataTables import get_atomic_weight_data
 
 def load_mu_data(mu_data_source):
     """
@@ -123,9 +131,9 @@ def generate_spectrum(spectrum_parameters, model_parameters,
         
         if model_parameters.physics == 'spekpy-v1' \
             or model_parameters.physics == 'spekcalc':
-            integrator = integrate.simps
+            integrator = simps
         else:
-            integrator = integrate.trapz
+            integrator = trapz
             
         # Positional parameters
         
@@ -276,7 +284,10 @@ def make_cost_function_fraction(spekpy_obj, calc_params, filter_material,
                                               mas_normalized_air_kerma=False)
         # Remove the filtration of thickness free_parameter
         spekpy_obj.state.filtration = state_filtration_original
-        val = (fractional_value - d / d0) ** 2
+        if np.isinf(d) or np.isinf(d0):
+            val=np.inf
+        else:
+            val = (fractional_value - d / d0) ** 2
         return val
 
     return cost_function_fraction
@@ -310,8 +321,11 @@ def make_cost_function_hvl(spekpy_obj, calc_params, filter_material,
         d = calculate_air_kerma_from_spectrum(spekpy_obj, calc_params, 
                                               mas_normalized_air_kerma=False)
         # Remove the filtration of thickness free_parameter
-        spekpy_obj.state.filtration = state_filtration_original
-        val = (0.5 - d / d0) ** 2
+        spekpy_obj.state.filtration = state_filtration_original     
+        if np.isinf(d) or np.isinf(d0):
+            val=np.inf
+        else:
+            val = (0.5 - d / d0) ** 2          
         return val  
     
     return cost_function_hvl
@@ -388,25 +402,6 @@ def minimize_for_fraction(spekpy_obj, calc_params, filter_material,
                                             filter_material, fractional_value)
     t = optimize.minimize_scalar(cost_function, method='brent')
     required_filter_thickness = t.x
-    return required_filter_thickness
-
-
-def minimize_for_hvl(spekpy_obj, filter_material, hvl_material, hvl_value):
-    """
-    A function used to minimize a cost function to find the required amount of
-    material to reach a fractional value of air Kerma
-
-    :param Spek spekpy_obj: An instance of spekpy object (Spek class)
-    :param str filter_material: The material of a specified filtration
-    :param str hvl_material The material for hvl definition
-    :param float hvl_value: The target first hvl value
-    :return required_filter_thickness: The required thickness of filter for 
-        target hvl value
-    """
-    cost_function = make_cost_function_hvl(spekpy_obj, filter_material, 
-                                           hvl_material, hvl_value)
-    required_filter_thickness = optimize.minimize_scalar(cost_function,
-                                                         method='brent')
     return required_filter_thickness
 
 
@@ -525,13 +520,13 @@ def calculate_required_filter_thickness(spekpy_obj, calc_params,
     if half_value_layer:
         cost_function = make_cost_function_hvl(spekpy_obj, calc_params, 
                             filter_material, hvl_material, half_value_layer)
-        t = optimize.minimize_scalar(cost_function, method='golden')
+        t = optimize.minimize_scalar(cost_function, method='brent')
         
     elif fractional_value:
         cost_function = make_cost_function_fraction(spekpy_obj, calc_params,
                                         filter_material, fractional_value)
-        t = optimize.minimize_scalar(cost_function, method='golden')
-    
+        t = optimize.minimize_scalar(cost_function, method='brent')
+        
     required_thickness = t.x
     return required_thickness
 

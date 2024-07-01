@@ -2,9 +2,16 @@
 from __future__ import print_function, division, absolute_import
 ##################################
 import numpy as np
+from scipy import __version__ as sci_vers
+major = int(sci_vers.split('.')[0])
+minor = int(sci_vers.split('.')[1])
+if major > 1 or (minor > 5 and major ==1):
+    from scipy.integrate import simpson as simps
+else:
+    from scipy.integrate import simps as simps    
 import spekpy.SpekConstants as Const
-from scipy import integrate
 import spekpy.SpekAniso as aniso
+
 
 ## References (Note: Ref. 1-3 describe "legacy" model i.e. SpekCalc)
 #[1] Poludniowski G, Evans PM. Calculation of x-ray spectra emerging from an 
@@ -296,8 +303,7 @@ class SpekModel:
         sig_br = self.__sig_br(Ei, k)
         pe = self._pe(E0_ref, t_scaled, u)
         ne = self._ne(E0_ref, t_scaled)
-        brem_t = integrate.simps(sig_br[None, :] * pe * ne[:, None], 
-                                 axis=1, dx=du) \
+        brem_t = simps(sig_br[None, :] * pe * ne[:, None], axis=1, dx=du) \
             / self.__norm_t(E0, E0_ref, t_scaled)
         return brem_t
 
@@ -351,7 +357,7 @@ class SpekModel:
         
         [k, dk] = np.linspace(edge_energy, E0, nk, retstep=True)
         brem = [self.__brem_t(k[i], E0, E0_ref, t_scaled) for i in range(nk)]
-        char = integrate.simps(brem, axis=0, dx=dk)
+        char = simps(brem, axis=0, dx=dk)
         return char
 
 
@@ -371,7 +377,7 @@ class SpekModel:
         n = self.nu
         [u, du] = np.linspace(0.0, 1.0, n, retstep=True)
         pe = self._pe(E0_ref, t_scaled, u)
-        norm = integrate.simps(pe, axis=1, dx=du)
+        norm = simps(pe, axis=1, dx=du)
         return norm
 
 
