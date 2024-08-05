@@ -160,7 +160,7 @@ class SpekAniso:
             theta_e for electron energy E and depth x [degree**-1]
         """
         # List of targets with available electron penetration data 
-        Zlist = array([42, 74])
+        Zlist = array([42, 45, 74])
         # The index of nearest element in list to actual target material
         iZ = abs( Zlist-self.Z ).argmin()
         # The Z of the nearest element
