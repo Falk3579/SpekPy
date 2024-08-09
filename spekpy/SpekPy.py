@@ -114,7 +114,7 @@ class Spek:
                                         "selected physics model and target"
                                         "(kvp = 10 to 500 kV)")
                 else:
-                    if kvp<20. or kvp>50.:
+                    if kvp<10. or kvp>50.:
                         raise Exception("Requested kVp is out of range for "
                                         "selected physics model and target"
                                         "(kvp = 20 to 50 kV)")
