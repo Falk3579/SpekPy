@@ -129,6 +129,8 @@ class SpekModel:
             z = spekpy_obj.state.spectrum_parameters.z
             anode_angle = spekpy_obj.state.model_parameters.th
             anode_material = spekpy_obj.state.model_parameters.targ
+            trans = spekpy_obj.state.model_parameters.trans
+            thick = spekpy_obj.state.model_parameters.thick
             if physics.split('-')[-1] == 'diff':
                 shape = 'uni'
                 diffuse = True
@@ -143,7 +145,7 @@ class SpekModel:
                 brsrc = 'nist'
             s = aniso.SpekAniso(kvp=E0,x=x,y=y,z=z,target=anode_material,
                         th=anode_angle,k=self.k,shape=shape,
-                        diffuse=diffuse,brsrc=brsrc)
+                        diffuse=diffuse,brsrc=brsrc,thick=thick,trans=trans)
             self.brem_k = s.brem_k
             self.char_k = s.char_k
             self.brem_kt = s.brem_kt
@@ -152,6 +154,7 @@ class SpekModel:
             self.t_char = s.t_char
             self.anode_self_filtration = s.anode_self_filtration
             self.anode_self_filtration_char = s.anode_self_filtration_char
+            self.rcsda = s.rcsda
         else: # Ref. [5]
             # Number of depths calculated for electrons in target
             self.nt = 100

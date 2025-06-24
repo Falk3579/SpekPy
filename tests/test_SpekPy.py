@@ -29,9 +29,10 @@ def compare_dicts(dict1, dict2, atol=1e-8):
             if not np.isclose(ans1, ans2, atol = atol):
                 errors.append(item+': ref='+str(ans1)+' calc='+str(ans2))
         elif type(ans1) == np.ndarray:
-            rmsd=np.sqrt(np.mean((ans1 - ans2)**2))
-            if not np.isclose(rmsd, 0.0, atol=atol):
-                errors.append(item+': rmsd(ref-calc)='+str(rmsd))
+            nrmsd=np.sqrt(np.mean((ans1 - ans2)**2)) \
+                /(np.max(ans1)-np.min(ans1))
+            if not np.isclose(nrmsd, 0.0, atol=atol):
+                errors.append(item+': nrmsd(ref-calc)='+str(rmsd))
     return errors
 
 # Function to generates reference values for the get_std_results() method of 
@@ -93,7 +94,7 @@ def test_export_spectrum_and_load_from_file():
     dict1=dict_from_class(std_results_obj_1)
     dict2=dict_from_class(std_results_obj_2)
     # Create a list of errors
-    errors=compare_dicts(dict1,dict2,atol=1e-4)
+    errors=compare_dicts(dict1,dict2,atol=1e-6)
     assert errors==[]
 
 # Test function for get_std_results() method of Spek class in "legacy" mode
@@ -503,3 +504,26 @@ def test_get_hvl():
     hvlb = s.get_hvl1()
     assert np.isclose(hvla, hvlb), \
         'get_hvl() does not return the same result as get_hvl1()'
+
+# Test function to compare 1st HVLs in the Med Phys Pt2 paper
+def test_metrics_for_different_transmission_targets():
+    metrics=read_json_from_disk(os.path.join(testdir,
+                'metrics_for_different_transmission_targets.json'))
+    errors = []
+    targs = ['Cr','Cu','Mo','Rh','Ag','W','Au']
+    thicks =np.array([0.0011197,0.0009494,0.0009216,0.0007691,
+        0.0009215,0.0006,0.0006140])*1e4
+    for cnt in range(thicks.size):
+        tT = thicks[cnt]
+        targ = targs[cnt]
+        s = sp.Spek(kvp=50,targ=targ,trans=True,thick=tT).filter('Be',250e-3)
+        ks, fs = s.get_spectrum(z=10)
+        FLU = s.get_flu()
+        HVL1 = s.get_hvl()
+        if not np.isclose(FLU,metrics['FLU_'+targ],rtol=1e-6): 
+            errors.append('FLU_'+targ+': ref='+
+                str(metrics['FLU_'+targ])+' calc='+str(FLU))
+        if not np.isclose(HVL1,metrics['HVL1_'+targ],atol=1e-4):
+            errors.append('HVL1_'+targ+': ref='+
+                str(metrics['HVL1_'+targ])+' calc='+str(HVL1))
+        assert errors == []

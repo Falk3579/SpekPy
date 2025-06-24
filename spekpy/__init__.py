@@ -1,4 +1,4 @@
-__version__ = '2.0.13.1'
+__version__ = '2.5.0'
 from .SpekPy import Spek
 
 

@@ -260,6 +260,64 @@ class MuEnAirData:
                 'Could not interpolate mass absorption coefficients!')
 
 
+class MuEnWaterData:
+    """
+    A class to handle mass absorption coefficients for air
+    """
+    def __init__(self, muen_data_source):
+        """
+        Init MuEnWater
+
+        :param str muen_data_source: The muen_air data source, either 'nist' 
+            or 'pene'
+        """
+        self.muen_over_rho_water_data_source = muen_data_source
+        self.muen_over_rho_water_coefficients_energies = None
+        self.muen_over_rho_water_coefficients = None
+        self.__load_muen_over_rho_water_data()
+
+    def __load_muen_over_rho_water_data(self):
+        """
+        An internal method that loads the muen_water data
+
+        :return: Populates the class attributes muen_energy_grid and 
+            muen_water_values with data
+        """
+        muen_over_rho_water_data_source = self.muen_over_rho_water_data_source
+        muen_over_rho_water_data_file_name = full_file(Const.dir_data, 
+                            Const.dir_tables, muen_over_rho_water_data_source)
+        data = read_json_from_disk(muen_over_rho_water_data_file_name)
+        self.muen_over_rho_water_coefficients_energies = \
+            np.array(data['photon energy'])
+        self.muen_over_rho_water_coefficients = \
+            np.array(data['muen_over_rho_water'])
+        return
+
+    def get_muen_over_rho_water(self, energy_grid):
+        """
+        A method to interpolate the mass absorption coefficients for water for 
+        specified energies from the data tables
+
+        :param array energy_grid: The desired energy for the mass absorption 
+            coefficients
+        :return array muen_over_rho: The mass absorption coefficients
+        """
+        try:
+            mass_absorption_coefficient_water = \
+                self.muen_over_rho_water_coefficients
+            mass_absorption_coefficient_water_energies = \
+                self.muen_over_rho_water_coefficients_energies * \
+                    Const.conversion_MeV2keV
+            muen_over_rho_water = logarithmic_interpolator(
+                mass_absorption_coefficient_water,
+                mass_absorption_coefficient_water_energies, energy_grid)
+
+            return muen_over_rho_water
+        except:
+            raise Exception(
+                'Could not interpolate mass absorption coefficients!')
+
+
 class BremData:
     """A class to handle the NIST bremsstrahlung cross-sections"""
 

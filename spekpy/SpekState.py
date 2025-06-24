@@ -47,7 +47,7 @@ class State(object):
         data = [std_results.k, std_results.spk, spk_char]
         print("spectrum name")
         print(file_name)
-        write_spectrum_to_disk(header, data, file_name, delimiter, fmt='%.4f')
+        write_spectrum_to_disk(header, data, file_name, delimiter, fmt='%.8e')
 
     def get_basic_info_str(self, file_type='-'):
         """
@@ -75,8 +75,9 @@ class State(object):
                  fmt_param('Bin shift fraction', mp['shift'], '') + \
                  fmt_param('Physics Mode', mp['physics'], 'str') + \
                  fmt_param('Mu Data Source', mp['mu_data_source'], 'str') + \
-                 fmt_param('Target', mp['targ'], 'str')
-
+                 fmt_param('Target', mp['targ'], 'str') + \
+                 fmt_param('Transmission target', mp['trans'], 'bool') + \
+                 fmt_param('Target thickness', mp['thick'], 'um')
         return mp_str
 
     def get_spectrum_parameters_str(self):
@@ -273,8 +274,11 @@ class State(object):
                                     ('mu_data_source', 
                                      self.model_parameters.mu_data_source),
                                     ('targ', 
-                                     self.model_parameters.targ)])
-
+                                     self.model_parameters.targ),
+                                    ('trans',
+                                     self.model_parameters.trans),
+                                    ('thick',
+                                     self.model_parameters.thick)])
         return model_parameters
 
     def spectrum_parameters_dct(self):
@@ -366,6 +370,7 @@ class ExternalSpectrumDef(object):
         self.ext_z = None
         self.ext_mas = None
 
+
 class ModelParameterDef(object):
     """
     A class to hold information on a spectrum model
@@ -378,6 +383,8 @@ class ModelParameterDef(object):
         self.physics = None
         self.mu_data_source = None
         self.targ = None
+        self.trans = None
+        self.thick = None
 
 
 class SpekpyFlagsDef(object):

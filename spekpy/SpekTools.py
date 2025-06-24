@@ -18,29 +18,31 @@ import warnings
 from copy import deepcopy
 from collections import OrderedDict as ord_dct
 import spekpy.SpekConstants as Const
-from spekpy.DataTables import MuData, MuEnAirData
+from spekpy.DataTables import MuData, MuEnAirData, MuEnWaterData
 from spekpy.IO import write_json_to_disk, full_file
 from spekpy.DataTables import get_atomic_weight_data
 
 def load_mu_data(mu_data_source):
     """
-    A function to load mu and muen_air data
+    A function to load mu and muen_air and muen_water data
 
     :param str mu_data_source: Either 'nist' or 'pene' as the argument argument
-    :return functions mu_data, muen_air: Functions to get the relevant mu and 
-        muen_air data
+    :return functions mu_data, muen_air, muen_water: Functions to get the relevant mu and 
+        muen_air and muen_water data
     """
     # Check to make sure that the mu_data_source is either 'nist' or 'pene'
     if mu_data_source in ('nist', 'pene'): 
         mu_data_ = mu_data_source + '_mu' + Const.extension_data_file
         muen_air_ = mu_data_source + '_muen_air' + Const.extension_data_file
+        muen_water_ = mu_data_source + '_muen_water' + Const.extension_data_file
     else:
         raise Exception(mu_data_source + 
                         ' is not recognized as a mu_data_source!')
 
     mu_data = MuData(mu_data_)
     muen_air_data = MuEnAirData(muen_air_)
-    return mu_data, muen_air_data
+    muen_water_data = MuEnWaterData(muen_water_)
+    return mu_data, muen_air_data, muen_water_data
 
 def remove_filtration_idx(filtration_list, mut_array, idx):
     """
@@ -166,14 +168,17 @@ def generate_spectrum(spectrum_parameters, model_parameters,
         alp = np.arctan(x / z) # Direction cosine angle in x-dir
 
         # anode angle [degrees]
-        th = model_parameters.th 
+        th = model_parameters.th
+        trans = model_parameters.trans
         # In-plane angle (i.e., x-z plane) w.r.t. to normal to anode surface 
         if th is None:
             alpp = np.nan # Undefined (imported spectrum)
         else:
             alpp = np.pi / 2 - th * np.pi / 180 - alp # Can be defined
 
-        if not np.abs(alpp) > np.pi / 2 and not abs(bet) > np.pi / 2:
+        if ( (not trans and not np.abs(alpp) > np.pi / 2)
+             or (trans and not np.abs(alpp) < np.pi / 2 ) ) \
+             and not abs(bet) > np.pi / 2:
             # Ratio of filter path-length to filter thickness
             if oblique:
                 fo = np.sqrt(1.0 + np.tan(alp) ** 2 + np.tan(bet) ** 2) 
@@ -212,17 +217,19 @@ def generate_spectrum(spectrum_parameters, model_parameters,
         return spk
 
 
-def calculate_air_kerma_from_spectrum(spekpy_obj, calc_params, 
-                                      mas_normalized_air_kerma):
+def calculate_kerma_from_spectrum(spekpy_obj, calc_params, kerma_to_what,
+                                      mas_normalized_kerma):
     """
-    A method to get the air Kerma of the spectrum at a point specified in the
+    A method to get the Kerma of the spectrum at a point specified in the
     state of the spectrum
 
     :param Spek spekpy_obj: An instance of spekpy object (Spek class)
     :param dict calc_parameters: Ordered dictionary of spectrum parameters
-    :param bool mas_normalized_air_kerma: A boolean indicating if the air Kerma
+    :param str kerma_to_what: The material to which kerma is defined 
+            ('air' or 'water')
+    :param bool mas_normalized_kerma: A boolean indicating if the Kerma
         should be mAs normalized
-    :return float air_kerma: Calculated air Kerma for the parameters in the 
+    :return float kerma: Calculated Kerma for the parameters in the 
         spekpy object [uGy mAs^-1] or [uGy]
     """  
     # Energy bins of spectrum [keV]
@@ -236,28 +243,34 @@ def calculate_air_kerma_from_spectrum(spekpy_obj, calc_params,
     # Tube load [mAs]
     mas = spekpy_obj.state.spectrum_parameters.mas  
     # Muen differential in energy [cm^2 g^-1]
-    muen_air = spekpy_obj.muen_air_data.get_muen_over_rho_air(k)  
+    if kerma_to_what is 'air':
+        muen = spekpy_obj.muen_air_data.get_muen_over_rho_air(k) 
+    elif kerma_to_what is 'water':
+        muen = spekpy_obj.muen_water_data.get_muen_over_rho_water(k)
+    else: 
+        raise Exception(
+        'Reference material for kerma is set neither to "air" nor "water"') 
 
     with np.errstate(over='ignore', under='ignore'):
         # Convert spekpy values to units for air_kerma calculations
-        muen_air_ = Const.conversion_per_g2per_kg * muen_air  # [cm^2 kg^-1]
+        muen_ = Const.conversion_per_g2per_kg * muen  # [cm^2 kg^-1]
 
-        if mas_normalized_air_kerma:
+        if mas_normalized_kerma:
             mas_ = 1.0 / mas
-        elif not mas_normalized_air_kerma:
+        elif not mas_normalized_kerma:
             mas_ = 1.0 
         else:
             raise Exception(
-                'Did not recognize the keyword mas_normalized_air_kerma')
+                'Did not recognize the keyword mas_normalized_kerma')
 
-        air_kerma = Const.conversion_keV2J * Const.conversion_Gy2uGy * \
-            np.sum(k * spk * mas_ * muen_air_)*dk
+        kerma = Const.conversion_keV2J * Const.conversion_Gy2uGy * \
+            np.sum(k * spk * mas_ * muen_)*dk
 
-    return air_kerma
+    return kerma
 
 
 def make_cost_function_fraction(spekpy_obj, calc_params, filter_material, 
-                                fractional_value):
+                                fractional_value, kerma_to_what):
     """
     A function to create a cost function that can be used to find the filter 
     thickness of a specific material to reach a
@@ -267,6 +280,8 @@ def make_cost_function_fraction(spekpy_obj, calc_params, filter_material,
     :param dict calc_parameters: Ordered dictionary of spectrum parameters
     :param str filter_material: A specified filter material
     :param float fractional_value: A fraction of air Kerma that is desired
+    :param str kerma_to_what: The material to which kerma is defined 
+            ('air' or 'water')
     :return cost_function_fraction: The cost function that is used to find the
         required thickness of a specified material needed to reach a specified
         fraction of air kerma
@@ -276,12 +291,12 @@ def make_cost_function_fraction(spekpy_obj, calc_params, filter_material,
         warnings.filterwarnings("ignore")
         # Store the initial filtration
         state_filtration_original = deepcopy(spekpy_obj.state.filtration)
-        d0 = calculate_air_kerma_from_spectrum(spekpy_obj, calc_params, 
-                                               mas_normalized_air_kerma=False)
+        d0 = calculate_kerma_from_spectrum(spekpy_obj, calc_params, 
+                                    kerma_to_what, mas_normalized_kerma=False)
         # Filter spectrum with a thickness of free_parameter
         change_filtration(spekpy_obj, filter_material, free_parameter)
-        d = calculate_air_kerma_from_spectrum(spekpy_obj, calc_params, 
-                                              mas_normalized_air_kerma=False)
+        d = calculate_kerma_from_spectrum(spekpy_obj, calc_params, 
+                                    kerma_to_what, mas_normalized_kerma=False)
         # Remove the filtration of thickness free_parameter
         spekpy_obj.state.filtration = state_filtration_original
         if np.isinf(d) or np.isinf(d0):
@@ -294,7 +309,7 @@ def make_cost_function_fraction(spekpy_obj, calc_params, filter_material,
 
 
 def make_cost_function_hvl(spekpy_obj, calc_params, filter_material, 
-                           hvl_material, hvl_value):
+                           hvl_material, hvl_value, kerma_to_what):
     """
     A function to create a cost function that can be used to find the filter 
     thickness of a specific material to reach a specified hvl
@@ -304,6 +319,8 @@ def make_cost_function_hvl(spekpy_obj, calc_params, filter_material,
     :param filter_material: A specified filter material
     :param hvl_material: The material used to specify hvl
     :param hvl_value: the first hvl value required [mm of hv_material]
+    :param str kerma_to_what: The material to which kerma is defined 
+            ('air' or 'water')
     :return: const_function_hvl1: The cost function that is used to find the
         required thickness of a specified material needed to reach a specified
         first hvl for a specified hvl material
@@ -314,12 +331,12 @@ def make_cost_function_hvl(spekpy_obj, calc_params, filter_material,
         # Store the initial filtration
         state_filtration_original = deepcopy(spekpy_obj.state.filtration)
         change_filtration(spekpy_obj, filter_material, free_parameter)
-        d0 = calculate_air_kerma_from_spectrum(spekpy_obj, calc_params, 
-                                               mas_normalized_air_kerma=False)
+        d0 = calculate_kerma_from_spectrum(spekpy_obj, calc_params, 
+                                    kerma_to_what, mas_normalized_kerma=False)
         # Filter spectrum with a thickness of free_parameter
         change_filtration(spekpy_obj, hvl_material, hvl_value)
-        d = calculate_air_kerma_from_spectrum(spekpy_obj, calc_params, 
-                                              mas_normalized_air_kerma=False)
+        d = calculate_kerma_from_spectrum(spekpy_obj, calc_params, 
+                                    kerma_to_what, mas_normalized_kerma=False)
         # Remove the filtration of thickness free_parameter
         spekpy_obj.state.filtration = state_filtration_original     
         if np.isinf(d) or np.isinf(d0):
@@ -356,7 +373,7 @@ def make_cost_function_effective_energy(spekpy_obj, calc_params,
 
 
 def calculate_effective_energy_from_spectrum(spekpy_obj, calc_params, 
-                                             filter_material):
+                                             filter_material, kerma_to_what):
     """
     A function to calculate the effective energy of a spectrum associated with
     the current spekpy state
@@ -364,13 +381,15 @@ def calculate_effective_energy_from_spectrum(spekpy_obj, calc_params,
     :param Spek spekpy_obj: An instance of spekpy object (Spek class)
     :param dict calc_parameters: Ordered dictionary of spectrum parameters
     :param str filter_material: The material of a specified filtration
+    :param str kerma_to_what: The material to which kerma is defined 
+            ('air' or 'water')
     :return float effective_energy: The calculated effective energy [keV]
     """
 
     # Calculate the linear attenuation coefficient of the material using the 
     # ... first half value layer
     first_half_value_layer = minimize_for_fraction(spekpy_obj, calc_params, 
-                                                   filter_material, 0.5)
+                                          filter_material, 0.5, kerma_to_what)
     mu = 10.0 * np.log(2.0) / first_half_value_layer
 
     # Minimize the appropriate cost function to find the effective energy
@@ -386,7 +405,7 @@ def calculate_effective_energy_from_spectrum(spekpy_obj, calc_params,
 
 
 def minimize_for_fraction(spekpy_obj, calc_params, filter_material, 
-                          fractional_value):
+                          fractional_value, kerma_to_what):
     """
     A function that is used to calculate the required thickness of a material 
     to reach a specified fractional air Kerma value
@@ -395,18 +414,20 @@ def minimize_for_fraction(spekpy_obj, calc_params, filter_material,
     :param dict calc_parameters: Ordered dictionary of spectrum parameters
     :param str filter_material: The material of a specified filtration
     :param float fractional_value: The target fractional value for air kerma
+    :param str kerma_to_what: The material to which kerma is defined 
+            ('air' or 'water')
     :return float required_filter_thickness: The required thickness of filter 
         for the target drop in kerma
     """
     cost_function = make_cost_function_fraction(spekpy_obj, calc_params, 
-                                            filter_material, fractional_value)
+                            filter_material, fractional_value, kerma_to_what)
     t = optimize.minimize_scalar(cost_function, method='brent')
     required_filter_thickness = t.x
     return required_filter_thickness
 
 
 def calculate_first_half_value_layer_from_spectrum(spekpy_obj, calc_params, 
-                                                   filter_material):
+                                              filter_material, kerma_to_what):
     """
     A function to calculate the first half value layer of a spectrum for a 
     desired material
@@ -414,34 +435,38 @@ def calculate_first_half_value_layer_from_spectrum(spekpy_obj, calc_params,
     :param Spek spekpy_obj: An instance of spekpy object (Spek class)
     :param dict calc_parameters: Ordered dictionary of spectrum parameters
     :param str filter_material: The name of the desired filter material
+    :param str kerma_to_what: The material to which kerma is defined 
+            ('air' or 'water')
     :return float first_half_value_layer: The calculated first half value 
         layer [mm]
     """
     first_half_value_layer = minimize_for_fraction(spekpy_obj, calc_params, 
-                                                   filter_material, 0.5)
+                                         filter_material, 0.5, kerma_to_what)
     return first_half_value_layer
 
 
 def calculate_second_half_value_layer_from_spectrum(spekpy_obj, calc_params, 
-                                                    filter_material):
+                                               filter_material, kerma_to_what):
     """
     A function to calculate the second half value layer for a desired material
 
     :param Spek spekpy_obj: An instance of spekpy object (Spek class)
     :param dict calc_parameters: Ordered dictionary of spectrum parameters
     :param str filter_material: The name of the desired filter material
+    :param str kerma_to_what: The material to which kerma is defined 
+            ('air' or 'water')
     :return float second_half_value_layer: The calculated second half value 
         layer [mm]
     """
     first_half_value_layer = calculate_first_half_value_layer_from_spectrum(
-        spekpy_obj, calc_params, filter_material)
+        spekpy_obj, calc_params, filter_material, kerma_to_what)
     second_half_value_layer = minimize_for_fraction(spekpy_obj, calc_params, 
-                            filter_material, 0.25) - first_half_value_layer
+               filter_material, 0.25, kerma_to_what) - first_half_value_layer
     return second_half_value_layer
 
 
 def calculate_homogeneity_coefficient_from_spectrum(spekpy_obj, calc_params, 
-                                                    filter_material):
+                                               filter_material, kerma_to_what):
     """
     A function to calculate the homogeniety coefficient from the spectrum
 
@@ -449,13 +474,15 @@ def calculate_homogeneity_coefficient_from_spectrum(spekpy_obj, calc_params,
     :param dict calc_parameters: Ordered dictionary of spectrum parameters
     :param str filter_material: The desired material for the calculation of 
         the homogeneity coefficient
+    :param str kerma_to_what: The material to which kerma is defined 
+            ('air' or 'water')
     :return float homogeneity_coefficient: The calculated homogeneity 
         coefficient
     """
     first_half_value_layer = calculate_first_half_value_layer_from_spectrum(
-        spekpy_obj, calc_params, filter_material)
+        spekpy_obj, calc_params, filter_material, kerma_to_what)
     second_half_value_layer = calculate_second_half_value_layer_from_spectrum(
-        spekpy_obj, calc_params, filter_material)
+        spekpy_obj, calc_params, filter_material, kerma_to_what)
     homogeneity_coefficient = first_half_value_layer / second_half_value_layer
     return homogeneity_coefficient
 
@@ -499,7 +526,8 @@ def calculate_fluence_from_spectrum(spekpy_obj, calc_params):
 
 
 def calculate_required_filter_thickness(spekpy_obj, calc_params, 
-            filter_material, hvl_material, half_value_layer, fractional_value):
+          filter_material, hvl_material, half_value_layer, 
+          fractional_value, kerma_to_what):
     """
     A function to calculate the thickness of a specified material required to 
     reach a specific half value layer or air Kerma fraction
@@ -509,6 +537,8 @@ def calculate_required_filter_thickness(spekpy_obj, calc_params,
     :param str filter_material: The name of the specified material
     :param float half_value_layer: The desired half value layer
     :param float fractional_value: The desired air Kerma fraction
+    :param str kerma_to_what: The material to which kerma is defined 
+            ('air' or 'water')
     :return float required_thickness: The required thickness of the specified
         material needed to reach the desired half value layer or air Kerma 
         fraction [mm]
@@ -519,12 +549,12 @@ def calculate_required_filter_thickness(spekpy_obj, calc_params,
 
     if half_value_layer:
         cost_function = make_cost_function_hvl(spekpy_obj, calc_params, 
-                            filter_material, hvl_material, half_value_layer)
+                filter_material, hvl_material, half_value_layer, kerma_to_what)
         t = optimize.minimize_scalar(cost_function, method='brent')
         
     elif fractional_value:
         cost_function = make_cost_function_fraction(spekpy_obj, calc_params,
-                                        filter_material, fractional_value)
+                filter_material, fractional_value, kerma_to_what)
         t = optimize.minimize_scalar(cost_function, method='brent')
         
     required_thickness = t.x
@@ -584,7 +614,7 @@ class StandardResults:
         self.hc_cu = None  # Homogeneity coefficient of Cu
         self.eeff_cu = None  # Effective energy of Cu [keV]
 
-    def calculate_standard_results(self, spekpy_obj, calc_params):
+    def calculate_standard_results(self, spekpy_obj, calc_params, kerma_to_what):
         """
         A function to calculate standard results for a spectrum
 
@@ -599,24 +629,24 @@ class StandardResults:
                         spekpy_obj.state.external_spectrum, spekpy_obj.model, 
                         spekpy_obj.state.filtration)
         self.flu = calculate_fluence_from_spectrum(spekpy_obj, calc_params)
-        self.kerma = calculate_air_kerma_from_spectrum(spekpy_obj, calc_params,
-                                            mas_normalized_air_kerma=False)
+        self.kerma = calculate_kerma_from_spectrum(spekpy_obj, calc_params,
+                                          kerma_to_what, mas_normalized_kerma=False)
         self.emean = calculate_mean_energy_from_spectrum(spekpy_obj, 
-                                            calc_params)
+                                          calc_params)
         self.hvl_1_al = minimize_for_fraction(spekpy_obj, calc_params, 
-                                              'Al', 0.5)
+                                          'Al', 0.5, kerma_to_what)
         self.hvl_2_al = minimize_for_fraction(spekpy_obj, calc_params, 
-                                              'Al', 0.25) - self.hvl_1_al
+                                          'Al', 0.25, kerma_to_what) - self.hvl_1_al
         self.hc_al = self.hvl_1_al / self.hvl_2_al
         self.eeff_al = calculate_effective_energy_from_spectrum(spekpy_obj, 
-                                                            calc_params, 'Al')
+                                           calc_params, 'Al', kerma_to_what)
         self.hvl_1_cu = minimize_for_fraction(spekpy_obj, calc_params, 
-                                              'Cu', 0.5)
+                                           'Cu', 0.5, kerma_to_what)
         self.hvl_2_cu = minimize_for_fraction(spekpy_obj, calc_params, 
-                                              'Cu', 0.25) - self.hvl_1_cu
+                                           'Cu', 0.25, kerma_to_what) - self.hvl_1_cu
         self.hc_cu = self.hvl_1_cu / self.hvl_2_cu
         self.eeff_cu = calculate_effective_energy_from_spectrum(spekpy_obj, 
-                                                            calc_params, 'Cu')
+                                            calc_params, 'Cu', kerma_to_what)
         return self
 
 

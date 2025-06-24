@@ -10,7 +10,7 @@ from spekpy.SpekState import State, FiltrationDef
 from spekpy.SpekModel import SpekModel
 import copy
 from spekpy.SpekTools import load_mu_data, change_filtration, \
-    calculate_air_kerma_from_spectrum, calculate_mean_energy_from_spectrum, \
+    calculate_kerma_from_spectrum, calculate_mean_energy_from_spectrum, \
     calculate_effective_energy_from_spectrum, calculate_fluence_from_spectrum,\
     calculate_required_filter_thickness, \
     calculate_first_half_value_layer_from_spectrum, \
@@ -28,18 +28,21 @@ class Spek:
     def __init__(self,
             kvp=None, th=None, dk=None, mu_data_source=None, physics=None,
             x=None, y=None, z=None, mas=None, brem=None, char=None, obli=None,
-            comment=None, targ=None, shift=None, init_default=True):
+            comment=None, targ=None, shift=None, thick=None, trans=False,
+            init_default=True):
         """Constructor method for the Spek class 
 
         SEE THE WIKI PAGES FOR MORE INFO:
         https://bitbucket.org/spekpy/spekpy_release/wiki/Further_information
         
         :param float kvp: tube potential [kV] (default: depends on target)
-        :param float th: anode angle [degrees] (default: 12 degrees)
+        :param float th: anode angle [degrees] (default: 12 degrees for
+            reflection target, -90 degrees for transmission target)
         :param float dk: energy bin width [keV] (default: 0.5 keV)
         :param string: mu_data_source (default: depends on physics model)
             options: ('pene' or 'nist')
-        :param float physics: physics model (default: 'casim')
+        :param float physics: physics model (default: 'casim' for reflection
+            target, 'kqp' for tranmission target)
             options: ('casim', 'kqp', 'spekpy-v1', 'spekcalc',
                       'diff', 'uni', 'sim', 'classical')
         :param float x: displacement from central axis in anode-cathode 
@@ -56,9 +59,14 @@ class Spek:
             are assumed for off axis positions (default: true)
         :param string comment: any text annotation the user wishes to add
         :param string targ: the anode target material (default: 'W')
-            options: ('W', 'Mo', or 'Rh')
+            options: ('Cr', 'Cu', 'Mo', 'Rh', 'Ag', 'W', 'Au')
         :param float shift: optional fraction of an energy bin to shift the
             energy bins (useful when matching to measurements) (default: 0.0)
+        :param float thick: if provided, specifies target thickness in microns
+            (otherwise the target is assumed semi-infinite)
+        :param logical trans: specifies whether a transmission target (default:
+            False, i.e., a reflection target). If true, 'thick' must also be
+            specified
         """
         self._rg, self._pe, self._ne, self._line_data, self._nist_brem_data \
             = data
@@ -67,15 +75,13 @@ class Spek:
         self.state.script_path = get_script_path()
         self.mu_data = None
         self.muen_air_data = None
+        self.muen_water_data = None
         self.model=SpekModel()
 
         if init_default:
-            # Assign defaults if not specified
-            th = 12.0 if th is None else th
+            # Assign defaults if not specified and check validity of inputs
             dk = 0.5 if dk is None else dk
             targ = 'W' if targ is None else targ
-            if kvp is None:
-              kvp = 100.0 if targ == 'W' else 30.0  
             x = 0.0 if x is None else x
             y = 0.0 if y is None else y
             z = 100.0 if z is None else z
@@ -84,24 +90,18 @@ class Spek:
             char = True if char is None else char
             obli = True if obli is None else obli
             comment = None if comment is None else comment
-            physics = Spek.alias('casim') if physics is None \
-                else Spek.alias(physics.lower())
-            if mu_data_source is None:
-                if physics == 'spekcalc' or physics == 'spekpy-v1':
-                  mu_data_source = 'nist'
-                else:
-                  mu_data_source = 'pene'
-            # Check validity of inputs
+            if kvp is None:
+                kvp = 100.0 if targ == 'W' else 30.0 
+            # Permissible target materials depend on whether SpekPy v1 or v2
+            #   physics models are used
             if physics == 'spekcalc' or physics == 'spekpy-v1':
                 if targ != 'W':
                     raise Exception("Only tungsten anode available for "
                         "selected physics mode (targ = 'W')")
-            if targ not in ['W', 'Mo', 'Rh']:
+            if targ not in ['W', 'Mo', 'Rh', 'Cr', 'Cu', 'Ag', 'Au']:
                 raise Exception("Requested anode material is not available "
-                        "(targ = 'W', 'Mo' or 'Rh')")
-            if mu_data_source != 'nist' and mu_data_source != 'pene':
-                raise Exception("Requested mu_data_source is unrecognized "
-                                "(mu_data_source = 'nist' or 'pene')")
+                        "(targ = 'Cr', 'Cu', 'Mo', 'Rh', 'Ag', 'W' or 'Au')")
+            # Permissible kvp range depends on whether SpekPy v1 or v2 model
             if physics == 'spekcalc' or physics == 'spekpy-v1':
                 if kvp<10. or kvp>1000.:
                     raise Exception("Requested kVp is out of range for "
@@ -117,15 +117,49 @@ class Spek:
                     if kvp<10. or kvp>50.:
                         raise Exception("Requested kVp is out of range for "
                                         "selected physics model and target"
-                                        "(kvp = 20 to 50 kV)")
+                                        "(kvp = 10 to 50 kV)")
+            # Check validity of any specified shift of energy bins from default
             if shift is not None:
                 if shift > 0.5 or shift < -0.5:
                     raise Exception("Requested bin shift is outside allowed "
                                     "range (shift = -0.5 to +0.5)")
+            # Default central axis and physics model depends on whether
+            #   a reflection (trans = False) or transmission (trans=True) 
+            #   target is selected. 
+            if not trans: 
+                th = 12.0 if th is None else th
+                physics = Spek.alias('casim') if physics is None \
+                    else Spek.alias(physics.lower())
+            elif trans:
+                if thick is None:
+                    raise Exception("Target thickness must be specified for a"
+                                "transmission target")
+                th = -90 if th is None else th
+                if th > 0.:
+                    raise Exception("Angle 'th' must be less than zero for a"
+                                "transmission target (-90 for forward emission)")     
+                if physics is None:
+                    physics = Spek.alias('kqp')
+                elif physics in ['kqp', 'sim', 'casim', 'uni', 'diff', 'classical']:
+                    physics = Spek.alias(physics.lower())
+                else:
+                    raise Exception("Only SpekPy v2 physics models possible for  "
+                        "transmission targets")
+            # Default mu data sets depend on whather SpekPy v1 or v2 models used
+            if mu_data_source is None:
+                if physics == 'spekcalc' or physics == 'spekpy-v1':
+                    mu_data_source = 'nist'
+                else:
+                    mu_data_source = 'pene'
+            if mu_data_source != 'nist' and mu_data_source != 'pene':
+                raise Exception("Requested mu_data_source is unrecognized "
+                                "(mu_data_source = 'nist' or 'pene')")
+
             # Assign parameters to state          
-            self.set_state_parameters(kvp=kvp, th=th, dk=dk, physics=physics, 
-                mu_data_source=mu_data_source, x=x, y=y, z=z, mas=mas, 
-                brem=brem, char=char, obli=obli, targ=targ, shift=shift)
+            self.set_state_parameters(kvp=kvp, th=th, dk=dk, physics=physics,
+                mu_data_source=mu_data_source, x=x, y=y, z=z, mas=mas,
+                brem=brem, char=char, obli=obli, targ=targ, shift=shift,
+                thick=thick, trans=trans)
 
     @staticmethod
     def alias(name):
@@ -207,16 +241,16 @@ class Spek:
             
             if update_model:
                 # Re-initialize the model parameters
-                self.mu_data, self.muen_air_data = load_mu_data(
-                    self.state.model_parameters.mu_data_source)
+                self.mu_data, self.muen_air_data, self.muen_water_data = \
+                    load_mu_data(self.state.model_parameters.mu_data_source)
                 self.spectrum_from_model()
                 current_filtration = self.state.filtration.filters
                 self.state.filtration = FiltrationDef()
                 self.multi_filter(current_filtration)
             
             if update_external:
-               self.mu_data, self.muen_air_data = load_mu_data(
-                   self.state.model_parameters.mu_data_source)
+               self.mu_data, self.muen_air_data, self.muen_water_data = \
+                    load_mu_data(self.state.model_parameters.mu_data_source)
             
             # Manage normalization by reference air kerma of fluence
             if 'ref_kerma' in kwargs or 'ref_flu' in kwargs:
@@ -438,30 +472,34 @@ class Spek:
                                                  addend=addend)
         return k_out, spk_out
     
-    def get_kerma(self, norm=False, **kwargs):
+    def get_kerma(self, norm=False, to='air', **kwargs):
         
         """
-        A method to get the air Kerma for the current spekpy state
+        A method to get the Kerma for the current spekpy state
 
         :param kwargs: Keyword arguments to change parameters that are used for
             the calculation
         :param bool norm: A boolean indicating if the air Kerma should be 
             normalized by the mAs
-        :return float air_kerma: The air Kerma for the current spectrum at 
+        :param str to: The material to which kerma is defined 
+            ('air' or 'water')
+        :return float kerma: The Kerma for the current spectrum at 
             location x,y,z from the focal spot
         """
         calc_params = self.parameters_for_calculation(**kwargs)
-        air_kerma = \
-            calculate_air_kerma_from_spectrum(
-                self, calc_params, mas_normalized_air_kerma=norm)
-        return air_kerma
+        kerma = \
+            calculate_kerma_from_spectrum(
+                self, calc_params, mas_normalized_kerma=norm, kerma_to_what=to)
+        return kerma
 
-    def get_hvl1(self, matl='Al', **kwargs):
+    def get_hvl1(self, matl='Al', to='air', **kwargs):
         """
         Method to get the first half value layer for a desired material for the
         parameters in the current spekpy state
 
         :param str matl: The desired material name
+        :param str to: The material to which kerma is defined 
+            ('air' or 'water')
         :param kwargs: Keyword arguments to change parameters that are used for
             the calculation
         :return float first_half_value_layer: The calculated first half value
@@ -471,10 +509,10 @@ class Spek:
         calc_params = self.parameters_for_calculation(**kwargs)
         first_half_value_layer = \
             calculate_first_half_value_layer_from_spectrum(
-                self, calc_params, matl)
+                self, calc_params, matl, to)
         return first_half_value_layer
     
-    def get_hvl(self, matl='Al', **kwargs):
+    def get_hvl(self, matl='Al', to='air', **kwargs):
         """
         Method to get the first half value layer for a desired material for the
         parameters in the current spekpy state
@@ -482,6 +520,8 @@ class Spek:
         This is identical to "get_hvl1"
 
         :param str matl: The desired material name
+        :param str to: The material to which kerma is defined 
+            ('air' or 'water')
         :param kwargs: Keyword arguments to change parameters that are used for
             the calculation
         :return float first_half_value_layer: The calculated first half value 
@@ -491,15 +531,17 @@ class Spek:
         calc_params = self.parameters_for_calculation(**kwargs)
         first_half_value_layer = \
             calculate_first_half_value_layer_from_spectrum(
-                self, calc_params, matl)
+                self, calc_params, matl, to)
         return first_half_value_layer
 
-    def get_hvl2(self, matl='Al', **kwargs):
+    def get_hvl2(self, matl='Al', to='air', **kwargs):
         """
         A method to get the second half value layer for a desired material for
         the parameters in the current spekpy state
 
         :param str matl: The desired material name
+        :param str to: The material to which kerma is defined 
+            ('air' or 'water')
         :param kwargs: Keyword arguments to change parameters that are used for
             the calculation
         :return float second_half_value_layer: The calculated second half value
@@ -509,15 +551,17 @@ class Spek:
         calc_params = self.parameters_for_calculation(**kwargs)
         second_half_value_layer = \
             calculate_second_half_value_layer_from_spectrum(
-                self, calc_params, matl)
+                self, calc_params, matl, to)
         return second_half_value_layer
 
-    def get_hc(self, matl='Al', **kwargs):
+    def get_hc(self, matl='Al', to='air', **kwargs):
         """
         A method to get the homogeneity coefficient for a desired material for
         the parameters in the current spekpy state
 
         :param str matl: The desired material name
+        :param str to: The material to which kerma is defined 
+            ('air' or 'water')
         :param kwargs: Keyword arguments to change parameters that are used for
             the calculation
         :return float homogeneity_coefficient: The calculated homogeneity 
@@ -526,11 +570,11 @@ class Spek:
         calc_params = self.parameters_for_calculation(**kwargs)
         homogeneity_coefficient = \
             calculate_homogeneity_coefficient_from_spectrum(
-                self, calc_params, matl)
+                self, calc_params, matl, to)
         return homogeneity_coefficient
 
     def get_matl(self, matl='Al', hvl_matl='Al',hvl=False, frac=False, 
-                 **kwargs):
+    			to='air', **kwargs):
         """
         A method to calculate the thickness of a desired material that is 
         needed to obtain a first half value layer or fraction of air Kerma 
@@ -540,6 +584,8 @@ class Spek:
         :param float hvl: The desired first half value layer of the desired 
             material
         :param float frac: The desired air Kerma fraction
+        :param str to: The material to which kerma is defined 
+            ('air' or 'water')
         :param kwargs: Keyword arguments to change parameters that are used for
             the calculation
         :return float required_filter_thickness: The required thickness of the
@@ -548,7 +594,7 @@ class Spek:
         calc_params = self.parameters_for_calculation(**kwargs)
         required_filter_thickness = \
             calculate_required_filter_thickness(self, calc_params, matl, 
-                                                hvl_matl, hvl, frac)
+                                                hvl_matl, hvl, frac, to)
         return required_filter_thickness
 
     def get_emean(self, **kwargs):
@@ -564,19 +610,21 @@ class Spek:
         mean_energy = calculate_mean_energy_from_spectrum(self, calc_params)
         return mean_energy
 
-    def get_eeff(self, matl='Al', **kwargs):
+    def get_eeff(self, matl='Al', to='air', **kwargs):
         """
         A method to get a calculation of the effective energy of the spectrum 
         for the parameters in the current spekpy state, for a desired material
 
         :param str matl: The desired filter material
+        :param str to: The material to which kerma is defined 
+            ('air' or 'water')
         :param kwargs: Keyword arguments to change parameters that are used for
             the calculation
         :return float effective_energy: The calculated effective energy [keV]
         """
         calc_params = self.parameters_for_calculation(**kwargs)
         effective_energy = \
-            calculate_effective_energy_from_spectrum(self, calc_params, matl)
+            calculate_effective_energy_from_spectrum(self, calc_params, matl, to)
         return effective_energy
 
     def get_flu(self, **kwargs):
@@ -623,7 +671,7 @@ class Spek:
         return norm_flu
           
 
-    def get_std_results(self, **kwargs):
+    def get_std_results(self, to='air', **kwargs):
         """
         A method to calculate standard results for a spectrum that is defined 
         with the current spekpy state
@@ -643,13 +691,15 @@ class Spek:
             hc_cu: Homogeneity coefficient of copper
             eeff_cu: Effective energy of spectrum relative copper [keV]
 
+        :param str to: The material to which kerma is defined 
+            ('air' or 'water')
         :param kwargs: Keyword arguments to change the spekpy state
         :return StandardResults standard_results: A class containing the 
             standard results
         """
         calc_params = self.parameters_for_calculation(**kwargs)
         standard_results = \
-            StandardResults().calculate_standard_results(self, calc_params)
+            StandardResults().calculate_standard_results(self, calc_params, kerma_to_what=to)
         return standard_results
 
     def comment(self, comment=None):
@@ -698,8 +748,9 @@ class Spek:
         spek.state.external_spectrum.__dict__.update(
             **state_data['external_spectrum'])
 
-        if spek.mu_data is None and spek.muen_air_data is None:
-            spek.mu_data, spek.muen_air_data = \
+        if (spek.mu_data is None) or (spek.muen_air_data is None) \
+            or (spek.muen_water_data is None):
+            spek.mu_data, spek.muen_air_data, spek.muen_water_data = \
                 load_mu_data(spek.state.model_parameters.mu_data_source)
         
         spek.state.model_parameters.physics=spek.alias(
@@ -739,8 +790,8 @@ class Spek:
         spek.set_state_parameters(x=0, y=0, z=z, mas=mas, 
                                   obli=True, brem=True, char=True)
         spek.state.model_parameters.mu_data_source = mu_data_source
-        spek.mu_data, spek.muen_air_data = load_mu_data(
-            spek.state.model_parameters.mu_data_source)
+        spek.mu_data, spek.muen_air_data, spek.muen_water_data = \
+            load_mu_data(spek.state.model_parameters.mu_data_source)
         spek.spectrum_from_external_source(z,mas)
         return spek
 

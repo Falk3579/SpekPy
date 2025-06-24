@@ -6,7 +6,8 @@ from numpy import sin, cos, arctan, arccos, deg2rad, degrees
 from numpy import exp, sqrt, log, sum, abs, floor, round, divide
 from numpy import pi, nan
 from numpy import array, zeros, ones, insert, squeeze, meshgrid, arange
-from numpy import load, finfo, argmax, where, linspace, matmul
+from numpy import argmax, where, linspace, matmul, minimum, maximum
+from numpy import load, finfo
 import scipy.interpolate as interp
 from scipy.ndimage import map_coordinates
 from scipy import __version__ as sci_vers
@@ -30,7 +31,7 @@ else:
 class SpekAniso:
 
     
-    def __init__(self,target,shape,diffuse,brsrc,x,y,z,k,th,kvp):
+    def __init__(self,target,shape,diffuse,brsrc,x,y,z,k,th,kvp,thick,trans):
         """Constructor method for the SpekAniso class 
 
         :param string target: The abbreviation symbols for the target element
@@ -45,15 +46,22 @@ class SpekAniso:
         :param float array k: The x-ray energy bins to evaluate at [keV]
         :param float th: The anode angle [degrees]
         :param float kvp: The tube potential [kV]
+        :param float thick: The target thickness [um] (if None assumed semi-
+            infinite
+        :param logical trans: Whether a transmission target (if False
+            assumed to be a reflection target)
         """
         # The location of this file
         filedir = os.path.dirname(os.path.abspath(__file__))
         # Path to data file directory
         self.dirpath = os.path.join(filedir, 'data', 'tables', 'advanced')
         # Dictionary with targets modelled and corresponding atomic number
-        target_Z = {'W':74, 'Mo':42, 'Rh':45}
+        target_Z = {'W':74, 'Mo':42, 'Rh':45,'Cr':24,'Cu':29,'Ag':47,'Au':79}
         # Dictionary with targets modelled at corresponding atomic mass
-        target_amu = {'W':183.84, 'Mo':95.94, 'Rh':102.906}
+        # https://www.nist.gov/pml/atomic-weights-and-isotopic-compositions-relative-atomic-masses
+        # Accessed 16-06-2025
+        target_amu = {'W':183.84, 'Mo':95.95, 'Rh':102.905,'Cr':51.9961,
+            'Cu':63.546,'Ag':107.8682,'Au':196.966569}
         # The atomic weight of the target
         self.amu = target_amu[target]
         # Electron mass [keV/c**2]
@@ -82,12 +90,22 @@ class SpekAniso:
         # Change to takeoff angles
         self.varphi = deg2rad(th) + alp
         self.vartheta = bet
+        # Target thickness in cm (assumed semi-infinite if None)
+        if thick is not None:
+            self.thick = thick*1e-4 # Conversion from microns to cm
+        else:
+            self.thick = None
+        # Whether transmission target (otherwise reflrection)
+        self.trans = trans
         # Get bremsstrahlung and characterstic contributions
         self.brem_k, self.brem_kt, \
             self.anode_self_filtration , self.t = self.__Brems()
         self.char_k, self.char_kt, \
             self.anode_self_filtration_char, self.t_char = self.__Char()
-  
+        range_fn = self.__get_range_fn()
+        logmac_target, rho_target = self.__get_logmac_fn()
+        self.rcsda = squeeze(range_fn(self.E0)/rho_target)
+ 
     
     def __get_range_fn(self):
         """Internal method to generate a function for electron CSDA range as a 
@@ -160,7 +178,7 @@ class SpekAniso:
             theta_e for electron energy E and depth x [degree**-1]
         """
         # List of targets with available electron penetration data 
-        Zlist = array([42, 45, 74])
+        Zlist = array([29, 42, 45, 74])
         # The index of nearest element in list to actual target material
         iZ = abs( Zlist-self.Z ).argmin()
         # The Z of the nearest element
@@ -521,6 +539,19 @@ class SpekAniso:
         # * The electron ang. dist. for electron energies, E, at depths, x [3d]
         x, NE, pomega_e = self.__gen_epen_arrays(csda_range, E, theta_e, 
                                                  domega_e)
+
+        # Define the escape thickness, x_escape, depending on forward 
+        #   (transmission) or backwards (reflection) emission   
+        # Note the numerical trick of setting values of x greater than 
+        #   self.thick equal to self.thick. These values do not then 
+        #   contribute to the final result, as the later integral over
+        #   x has zero intervals (dx=0) for these contributions
+        if self.thick is not None:
+            x = minimum(x, self.thick)
+        if self.trans:
+            x_escape = self.thick - x
+        else:
+            x_escape = x
         
         # Generate arrays for:
         # * The brems cross-section dsig/dk for sampled E/k grid [2d]
@@ -544,12 +575,12 @@ class SpekAniso:
                 # mac values at subsampled energy
                 mac_sub[j] = exp( logmac_target( 
                     log( self.k[i]-dk*0.5+(dk*0.1)*float(j) )
-                    ) )
+                    ) )          
             # Average attenuation for the x-ray energy bin for each depth
-            attn_anode = exp( -mac_sub.mean() * rho_target * x * 
-                            sin(self.varphi)**(-1) * cos(self.vartheta)**(-1) )
+            attn_anode = exp( -mac_sub.mean() * rho_target * x_escape *
+                    sin(abs(self.varphi))**(-1) * cos(self.vartheta)**(-1) )
             # Average filtration for each x-ray energy bins and depth
-            anode_filtration[i,:] = mac_sub.mean() * rho_target * x
+            anode_filtration[i,:] = mac_sub.mean() * rho_target * x_escape
             # Generate interpolation fn for electron freq. distribution at the 
             # ... tip (the tip region is where k ~ E)
             # The function returns a vector of values for x, for each E value
@@ -617,13 +648,17 @@ class SpekAniso:
         filepath = os.path.join(self.dirpath, 'FluorescenceZ' 
                                 + str(self.Z) + '.npz')
         data = load(filepath)
-        # K depths tabulated
-        x_K_data = data['x_K'].astype('float64')
-        # K incident energies tabulated
-        E0_K_data = data['E0_K'].astype('float64')
-        # K emission data
-        K_data =  data['K'].astype('float64')
-        # Assign the L shell data to arrays if it exists
+        try:
+            # K depths tabulated
+            x_K_data = data['x_K'].astype('float64')
+            # K incident energies tabulated
+            E0_K_data = data['E0_K'].astype('float64')
+            # K emission data
+            K_data =  data['K'].astype('float64')
+            # Assign the L shell data to arrays if it exists
+            K_included = True
+        except:
+        	K_included = False
         try:
             x_L1_data = data['x_L1'].astype('float64')
             E0_L1_data = data['E0_L1'].astype('float64')
@@ -640,8 +675,9 @@ class SpekAniso:
             # L data absent
             L_included = False
         # Create interpolation function for K depth-data depending on x and E0
-        Kfun = interp.RegularGridInterpolator( (x_K_data, E0_K_data), K_data, 
-            bounds_error=False, fill_value=finfo(dtype='float64').resolution)
+        if K_included:
+            Kfun = interp.RegularGridInterpolator( (x_K_data, E0_K_data), K_data, 
+                bounds_error=False, fill_value=finfo(dtype='float64').resolution)
         # Create interpolation function for L depth-data (if available) 
         # ... depending on x and E0
         if L_included:
@@ -662,7 +698,10 @@ class SpekAniso:
         var[:,:,1] = E0_grid
         # Interpolate for depths, x, and the E0 value. Remove singlet dimension
         # ... as interpolation is only done for 1 value of E0
-        Kdist = squeeze( Kfun(var) )
+        if K_included:
+            Kdist = squeeze( Kfun(var) )
+        else:
+            Kdist = zeros(squeeze( L1fun(var) ).shape)
         # Do interpolations for L shells, if data available
         if L_included:
             L1dist = squeeze( L1fun(var) )
@@ -748,8 +787,6 @@ class SpekAniso:
         range_target = self.__get_range_fn()
         # Define the CSDA range in units of cm
         csda_range = range_target(self.E0) / rho_target
-        # Define the maximum electron penetration depth considered
-        dmax = squeeze(20.*csda_range)
         
         # Define number of depths to sample
         if self.shape == 'kqp' or self.shape == 'sim':
@@ -759,8 +796,19 @@ class SpekAniso:
           
         # Depth sampling spacing  
         dx = squeeze(csda_range / float(N))
-        # Array of depths to sample
+
+        # Define the maximum electron penetration depth considered
+        if self.thick is not None:
+            dmax = minimum(self.thick,20.*csda_range)
+        else:
+            dmax = 20.*csda_range
+
+        # Define the escape thickness depending on transmission or reflection
         x = arange(0,dmax+0.5*dx,dx)
+        if self.trans:
+            x_escape = self.thick - arange(0,dmax+0.5*dx,dx)
+        else:
+            x_escape = arange(0,dmax+0.5*dx,dx)
       
         # Get the frequency distribution of characteristic emissions for target
         # ... for the incident kinetic electron energy, E0 and depths, x
@@ -778,14 +826,14 @@ class SpekAniso:
                 # Attenuation factor in escape target, considering photon 
                 # ... energy and the take-off angle
                 attn_anode = exp( -exp( mac_target(log(kL1[i]) ) )
-                        * rho_target * x 
-                        * sin(self.varphi)**-1 * cos(self.vartheta)**-1 )
+                        * rho_target * x_escape 
+                        * sin(abs(self.varphi))**-1 * cos(self.vartheta)**-1 )
                 # Number of characteristic photons in the line per solid angle
                 NL1[i] = (1./(4.*pi)) * trapz(L1dist*attn_anode,x/csda_range)
                 # The bin index of the line
                 ind = floor( ( kL1[i] - (self.k[0] - dk*0.5) ) 
                             / dk ).astype(int)
-                if ind<0:
+                if ind<0 or ind>=char_k.size:
                     continue
                 # Adds characteristic photons per solid angle per keV to bin
                 char_k[ind] = char_k[ind] + NL1[i] * PL1[i] / dk
@@ -801,14 +849,14 @@ class SpekAniso:
                 # Attenuation factor in escape target, considering photon 
                 # ... energy and the take-off angle
                 attn_anode = exp( -exp( mac_target(log(kL2[i]) ) ) 
-                            * rho_target * x 
-                            * sin(self.varphi)**-1 * cos(self.vartheta)**-1 )
+                            * rho_target * x_escape 
+                            * sin(abs(self.varphi))**-1 * cos(self.vartheta)**-1 )
                 # Number of characteristic photons in the line per solid angle
                 NL2[i]= (1./(4.*pi)) * trapz(L2dist*attn_anode,x/csda_range)
                 # The bin index of the line
                 ind = floor( ( kL2[i] - (self.k[0] - dk*0.5) ) 
                             / dk ).astype(int)
-                if ind<0:
+                if ind<0 or ind>=char_k.size:
                     continue
                 # Adds characteristic photons per solid angle per keV to bin
                 char_k[ind] = char_k[ind] + NL2[i] * PL2[i] / dk
@@ -824,14 +872,14 @@ class SpekAniso:
                 # Attenuation factor in escape target, considering photon 
                 # ... energy and the take-off angle
                 attn_anode = exp( -exp( mac_target(log(kL3[i]) ) ) 
-                            * rho_target * x
-                            * sin(self.varphi)**-1 * cos(self.vartheta)**-1 )
+                            * rho_target * x_escape
+                            * sin(abs(self.varphi))**-1 * cos(self.vartheta)**-1 )
                 # Number of characteristic photons in the line per solid angle
                 NL3[i]= (1./(4.*pi)) * trapz(L3dist*attn_anode,x/csda_range)
                 # The bin index of the line
                 ind = floor( ( kL3[i] - (self.k[0] - dk*0.5) ) \
                             / dk ).astype(int)
-                if ind<0:
+                if ind<0 or ind>=char_k.size:
                     continue
                 # Adds characteristic photons per solid angle per keV to bin
                 char_k[ind] = char_k[ind] + NL3[i] * PL3[i] / dk
@@ -847,14 +895,14 @@ class SpekAniso:
                 # Attenuation factor in escape target, considering photon 
                 # ... energy and the take-off angle
                 attn_anode = exp( -exp( mac_target(log(kK[i]) ) ) 
-                            * rho_target * x 
-                            * sin(self.varphi)**-1 * cos(self.vartheta)**-1 )
+                            * rho_target * x_escape 
+                            * sin(abs(self.varphi))**-1 * cos(self.vartheta)**-1 )
                 # Number of characteristic photons in the line per solid angle
                 NK[i]= (1./(4.*pi)) * trapz(Kdist*attn_anode,x/csda_range)
                 # The bin index of the line
                 ind = floor((kK[i] - (self.k[0] - dk * 0.5)) \
                             / dk).astype(int)
-                if ind<0:
+                if ind<0 or ind>=char_k.size:
                     continue
                 # Adds characteristic photons per solid angle per keV to bin
                 char_k[ind] = char_k[ind] + NK[i]*PK[i]/dk
@@ -867,11 +915,11 @@ class SpekAniso:
         for i in range(self.k.size):
             # linear attenuation coef. times depth for energies and depths
             mu_times_x[i,:] = exp( mac_target( log(self.k[i]) ) ) \
-                * rho_target * x
+                * rho_target * x_escape
             # Attenuation factor to escape target, for the photon energy and 
             # ... the depth bins for the take-off angle
             attn_factor =  exp( -mu_times_x[i,:] * 
-                               sin(self.varphi)**-1 * cos(self.vartheta)**-1 )
+                               sin(abs(self.varphi))**-1 * cos(self.vartheta)**-1 )
             # Characteristic freq. dist. per solid angle per keV, with the
             # ... self-filtration removed (applied again outside this class)
             char_kx[i,:] = divide(char_kx[i,:],attn_factor,where=attn_factor>0)
