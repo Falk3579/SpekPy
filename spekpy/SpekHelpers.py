@@ -27,7 +27,7 @@ def get_current_time_stamp(mode='str'):
 
 
 def format_parameter_str(parameter_name, parameter_value, parameter_unit, 
-                         decimal_places=1):
+                         decimal_places=3):
     """
     A helper function to help format spekpy parameters into a string
 
