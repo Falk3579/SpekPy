@@ -243,9 +243,9 @@ def calculate_kerma_from_spectrum(spekpy_obj, calc_params, kerma_to_what,
     # Tube load [mAs]
     mas = spekpy_obj.state.spectrum_parameters.mas  
     # Muen differential in energy [cm^2 g^-1]
-    if kerma_to_what is 'air':
+    if kerma_to_what == 'air':
         muen = spekpy_obj.muen_air_data.get_muen_over_rho_air(k) 
-    elif kerma_to_what is 'water':
+    elif kerma_to_what == 'water':
         muen = spekpy_obj.muen_water_data.get_muen_over_rho_water(k)
     else: 
         raise Exception(

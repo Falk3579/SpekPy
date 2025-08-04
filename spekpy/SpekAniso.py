@@ -922,7 +922,8 @@ class SpekAniso:
                                sin(abs(self.varphi))**-1 * cos(self.vartheta)**-1 )
             # Characteristic freq. dist. per solid angle per keV, with the
             # ... self-filtration removed (applied again outside this class)
-            char_kx[i,:] = divide(char_kx[i,:],attn_factor,where=attn_factor>0)
+            char_kx[i,:] = divide(char_kx[i,:],attn_factor,
+                        where=attn_factor>finfo(dtype='float64').resolution)
     
         if self.shape == 'kqp' or self.shape == 'sim':
             char_k = char_k
