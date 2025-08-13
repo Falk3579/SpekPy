@@ -249,9 +249,10 @@ def calculate_kerma_from_spectrum(spekpy_obj, calc_params, kerma_to_what,
         muen = spekpy_obj.muen_air_data.get_muen_over_rho_air(k) 
     elif kerma_to_what == 'water':
         muen = spekpy_obj.muen_water_data.get_muen_over_rho_water(k)
-    else: 
-        raise Exception(
-        'Reference material for kerma is set neither to "air" nor "water"') 
+    else:
+        muen, rho_composition = spekpy_obj.muen_data.get_muen_over_rho_composition(kerma_to_what, k)
+        # raise Exception(
+        # 'Reference material for kerma is set neither to "air" nor "water"') 
 
     with np.errstate(over='ignore', under='ignore'):
         # Convert spekpy values to units for air_kerma calculations
