@@ -74,6 +74,7 @@ class Spek:
         self.state.spekpy_version = __version__
         self.state.script_path = get_script_path()
         self.mu_data = None
+        self.muen_data = None
         self.muen_air_data = None
         self.muen_water_data = None
         self.model=SpekModel()
@@ -241,7 +242,7 @@ class Spek:
             
             if update_model:
                 # Re-initialize the model parameters
-                self.mu_data, self.muen_air_data, self.muen_water_data = \
+                self.mu_data, self.muen_data, self.muen_air_data, self.muen_water_data = \
                     load_mu_data(self.state.model_parameters.mu_data_source)
                 self.spectrum_from_model()
                 current_filtration = self.state.filtration.filters
@@ -249,7 +250,7 @@ class Spek:
                 self.multi_filter(current_filtration)
             
             if update_external:
-               self.mu_data, self.muen_air_data, self.muen_water_data = \
+               self.mu_data, self.muen_data, self.muen_air_data, self.muen_water_data = \
                     load_mu_data(self.state.model_parameters.mu_data_source)
             
             # Manage normalization by reference air kerma of fluence
@@ -748,9 +749,9 @@ class Spek:
         spek.state.external_spectrum.__dict__.update(
             **state_data['external_spectrum'])
 
-        if (spek.mu_data is None) or (spek.muen_air_data is None) \
-            or (spek.muen_water_data is None):
-            spek.mu_data, spek.muen_air_data, spek.muen_water_data = \
+        if (spek.mu_data is None) or (spek.muen_data is None) \
+            or (spek.muen_air_data is None) or (spek.muen_water_data is None):
+            spek.mu_data, spek.muen_data, spek.muen_air_data, spek.muen_water_data = \
                 load_mu_data(spek.state.model_parameters.mu_data_source)
         
         spek.state.model_parameters.physics=spek.alias(
@@ -790,7 +791,7 @@ class Spek:
         spek.set_state_parameters(x=0, y=0, z=z, mas=mas, 
                                   obli=True, brem=True, char=True)
         spek.state.model_parameters.mu_data_source = mu_data_source
-        spek.mu_data, spek.muen_air_data, spek.muen_water_data = \
+        spek.mu_data, spek.muen_data, spek.muen_air_data, spek.muen_water_data = \
             load_mu_data(spek.state.model_parameters.mu_data_source)
         spek.spectrum_from_external_source(z,mas)
         return spek

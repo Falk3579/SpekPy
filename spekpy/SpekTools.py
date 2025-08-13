@@ -18,21 +18,22 @@ import warnings
 from copy import deepcopy
 from collections import OrderedDict as ord_dct
 import spekpy.SpekConstants as Const
-from spekpy.DataTables import MuData, MuEnAirData, MuEnWaterData
+from spekpy.DataTables import MuData, MuEnData, MuEnAirData, MuEnWaterData
 from spekpy.IO import write_json_to_disk, full_file
 from spekpy.DataTables import get_atomic_weight_data
 
 def load_mu_data(mu_data_source):
     """
-    A function to load mu and muen_air and muen_water data
+    A function to load mu and muen and muen_air and muen_water data
 
     :param str mu_data_source: Either 'nist' or 'pene' as the argument argument
-    :return functions mu_data, muen_air, muen_water: Functions to get the relevant mu and 
-        muen_air and muen_water data
+    :return functions mu_data, muen_data, muen_air, muen_water: Functions to get
+        the relevant mu and muen_air and muen_water data
     """
     # Check to make sure that the mu_data_source is either 'nist' or 'pene'
     if mu_data_source in ('nist', 'pene'): 
         mu_data_ = mu_data_source + '_mu' + Const.extension_data_file
+        muen_data_ = mu_data_source + '_muen' + Const.extension_data_file
         muen_air_ = mu_data_source + '_muen_air' + Const.extension_data_file
         muen_water_ = mu_data_source + '_muen_water' + Const.extension_data_file
     else:
@@ -40,9 +41,10 @@ def load_mu_data(mu_data_source):
                         ' is not recognized as a mu_data_source!')
 
     mu_data = MuData(mu_data_)
+    muen_data = MuEnData(muen_data_)
     muen_air_data = MuEnAirData(muen_air_)
     muen_water_data = MuEnWaterData(muen_water_)
-    return mu_data, muen_air_data, muen_water_data
+    return mu_data, muen_data, muen_air_data, muen_water_data
 
 def remove_filtration_idx(filtration_list, mut_array, idx):
     """
