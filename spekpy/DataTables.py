@@ -240,16 +240,16 @@ class MuEnData:
         :return array muen: An array of mass absorption coefficients [cm^2 g^-1]
         """
         try:
-            mass_attenuation_coefficients = np.array(
+            mass_absorption_coefficients = np.array(
                 self.muen_over_rho_coefficients[atomic_number_element - 1]
                 )
-            mass_attenuation_coefficient_energies = (
+            mass_absorption_coefficient_energies = (
                 np.array(self.muen_over_rho_coefficients_energies
                          [atomic_number_element - 1]
                          ) * Const.conversion_MeV2keV)
             muen_over_rho = logarithmic_interpolator(
-                mass_attenuation_coefficients, 
-                mass_attenuation_coefficient_energies,
+                mass_absorption_coefficients, 
+                mass_absorption_coefficient_energies,
                 energy_grid)
             return muen_over_rho
         except:
