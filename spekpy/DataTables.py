@@ -207,7 +207,7 @@ class MuEnData:
     A class to handle absoprtion coefficients
     """
     def __init__(self, muen_data_source):
-        self.muen_data_source = mu_data_source
+        self.muen_data_source = muen_data_source
         self.muen_over_rho_data = None
         self.__load_muen_data()
 
@@ -219,10 +219,10 @@ class MuEnData:
         :return: The energy absorption coefficient data is loaded into the 
         attribute muen_data in the instance
         """
-        mu_data_source = self.mu_data_source
+        muen_data_source = self.muen_data_source
         muen_data_file_name = full_file(Const.dir_data, Const.dir_tables, 
-                                      mu_data_source)
-        data = read_json_from_disk(mu_data_file_name)
+                                      muen_data_source)
+        data = read_json_from_disk(muen_data_file_name)
         self.muen_over_rho_coefficients_energies = \
             np.array(data['photon energy'],dtype=object)
         self.muen_over_rho_coefficients = \
