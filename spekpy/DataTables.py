@@ -202,6 +202,145 @@ class MuData:
         return mu_material_thickness_product
 
 
+class MuEnData:
+    """
+    A class to handle absoprtion coefficients
+    """
+    def __init__(self, muen_data_source):
+        self.muen_data_source = mu_data_source
+        self.muen_over_rho_data = None
+        self.__load_muen_data()
+
+    def __load_muen_data(self):
+        """
+        A method to load the energy absorption coefficient data from the 
+        mu_data_source
+
+        :return: The energy absorption coefficient data is loaded into the 
+        attribute muen_data in the instance
+        """
+        mu_data_source = self.mu_data_source
+        muen_data_file_name = full_file(Const.dir_data, Const.dir_tables, 
+                                      mu_data_source)
+        data = read_json_from_disk(mu_data_file_name)
+        self.muen_over_rho_coefficients_energies = \
+            np.array(data['photon energy'],dtype=object)
+        self.muen_over_rho_coefficients = \
+            np.array(data['muen_over_rho'],dtype=object)
+        return
+
+    def get_muen_over_rho(self, atomic_number_element, energy_grid):
+        """
+        A method to get the mass absorption coefficients for a specific 
+        element and energy grid
+
+        :param int atomic_number_element: The atomic number of an element
+        :param array energy_grid: The energy grid for the mass absorption 
+            coefficients
+        :return array muen: An array of mass absorption coefficients [cm^2 g^-1]
+        """
+        try:
+            mass_attenuation_coefficients = np.array(
+                self.muen_over_rho_coefficients[atomic_number_element - 1]
+                )
+            mass_attenuation_coefficient_energies = (
+                np.array(self.muen_over_rho_coefficients_energies
+                         [atomic_number_element - 1]
+                         ) * Const.conversion_MeV2keV)
+            muen_over_rho = logarithmic_interpolator(
+                mass_attenuation_coefficients, 
+                mass_attenuation_coefficient_energies,
+                energy_grid)
+            return muen_over_rho
+        except:
+            raise Exception(
+                'Could not interpolate mass absorption coefficients!')
+
+    def get_muen_over_rho_composition(self, composition_name, energy_grid):
+        """
+        A method to calculate the compositional mass absorption coefficient. 
+        The composition is defined in a material definition file located in the
+        matls_def or matl_usr directory.
+
+        :param str composition_name: The name of the material composition file
+        :param array energy_grid: The energy grid for the compositional mass 
+            absorption coefficients
+        :return array, float muen_over_rho_total, rho: An array with the mass 
+            absorption coefficients
+        [cm^2 g^-1] for the material as well as the density of the composition 
+            [g cm^-3]
+        """
+        # Load the definition of the material composition. First look in the 
+        # ... directory with user-defined materials, if the definition file 
+        # ... does not exist there, look in the directory with default defined
+        # ... materials.
+        try:
+            material_composition_file = find_file(composition_name, 
+                                    Const.extension_matl_composition,
+                                    [Const.dir_matl_usr, Const.dir_matl_def])
+
+            composition_data = read_json_from_disk(material_composition_file)
+            rho_composition = composition_data['composition']['density']
+            composition = [tuple(filt) for filt 
+                           in composition_data['composition']['elements']]
+            number_of_elements = \
+                composition_data['composition']['number_of_elements']
+            
+            # Pre-allocate array
+            muen_over_rho_composition = np.zeros([number_of_elements,
+                                                len(energy_grid)]) 
+
+            # Loop through array with elements and weights, get mass 
+            # ... absorption coefficients and append to array.
+            for element_index, element in enumerate(composition):
+                atomic_number_element = element[0]
+                element_weight = element[1]
+                muen_over_rho_element = self.get_muen_over_rho(
+                    atomic_number_element, energy_grid)
+                muen_over_rho_composition[element_index, :] = \
+                    element_weight * muen_over_rho_element
+
+            muen_total = np.sum(muen_over_rho_composition, axis=0)
+            return muen_total, rho_composition
+
+        except:
+            raise Exception('Error when loading material composition file!')
+
+    def get_muen_composition(self, composition_name, energy_grid):
+        """
+        A method to calculate the absorption coefficient for a material 
+        composition
+
+        :param str composition_name: The name of the material composition file
+        :param array energy_grid: The energy grid for the compositional 
+            absorption coefficients [keV]
+        :return array mu_composition: An array with absorption coefficients 
+            for the material
+        """
+        muen_over_rho_composition, rho_composition = \
+            self.get_muen_over_rho_composition(composition_name, energy_grid)
+        muen_composition = muen_over_rho_composition * rho_composition
+        return muen_composition
+
+    def get_muen_t(self, composition_name, energy_grid, composition_thickness):
+        """
+        A method to get the product of absorption coefficients (differential 
+        in energy) of a composition and the thickness of a composition
+
+        :param str composition_name:
+        :param array energy_grid: The energy grid for the compositional 
+            absorption coefficients [keV]
+        :param float composition_thickness: The thickness of the composition 
+            [mm]
+        :return float muen_material_thickness_product: The product of absorption
+            coefficients and the thickness of the composition
+        """
+        muen_composition = self.get_muen_composition(composition_name, energy_grid)
+        muen_material_thickness_product = muen_composition * \
+            composition_thickness * Const.conversion_mm2cm
+        return muen_material_thickness_product
+
+
 class MuEnAirData:
     """
     A class to handle mass absorption coefficients for air
