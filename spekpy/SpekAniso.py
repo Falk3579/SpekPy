@@ -801,7 +801,7 @@ class SpekAniso:
         if self.thick is not None:
             dmax = minimum(self.thick,20.*csda_range)
         else:
-            dmax = 20.*csda_range
+            dmax = 20.*csda_range.item()
 
         # Define the escape thickness depending on transmission or reflection
         x = arange(0,dmax+0.5*dx,dx)
