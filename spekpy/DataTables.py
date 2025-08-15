@@ -322,24 +322,6 @@ class MuEnData:
         muen_composition = muen_over_rho_composition * rho_composition
         return muen_composition
 
-    def get_muen_t(self, composition_name, energy_grid, composition_thickness):
-        """
-        A method to get the product of absorption coefficients (differential 
-        in energy) of a composition and the thickness of a composition
-
-        :param str composition_name:
-        :param array energy_grid: The energy grid for the compositional 
-            absorption coefficients [keV]
-        :param float composition_thickness: The thickness of the composition 
-            [mm]
-        :return float muen_material_thickness_product: The product of absorption
-            coefficients and the thickness of the composition
-        """
-        muen_composition = self.get_muen_composition(composition_name, energy_grid)
-        muen_material_thickness_product = muen_composition * \
-            composition_thickness * Const.conversion_mm2cm
-        return muen_material_thickness_product
-
 
 class MuEnAirData:
     """
