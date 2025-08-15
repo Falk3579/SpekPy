@@ -280,7 +280,6 @@ class MuEnData:
                                     [Const.dir_matl_usr, Const.dir_matl_def])
 
             composition_data = read_json_from_disk(material_composition_file)
-            rho_composition = composition_data['composition']['density']
             composition = [tuple(filt) for filt 
                            in composition_data['composition']['elements']]
             number_of_elements = \
@@ -301,26 +300,10 @@ class MuEnData:
                     element_weight * muen_over_rho_element
 
             muen_total = np.sum(muen_over_rho_composition, axis=0)
-            return muen_total, rho_composition
+            return muen_total
 
         except:
             raise Exception('Error when loading material composition file!')
-
-    def get_muen_composition(self, composition_name, energy_grid):
-        """
-        A method to calculate the absorption coefficient for a material 
-        composition
-
-        :param str composition_name: The name of the material composition file
-        :param array energy_grid: The energy grid for the compositional 
-            absorption coefficients [keV]
-        :return array mu_composition: An array with absorption coefficients 
-            for the material
-        """
-        muen_over_rho_composition, rho_composition = \
-            self.get_muen_over_rho_composition(composition_name, energy_grid)
-        muen_composition = muen_over_rho_composition * rho_composition
-        return muen_composition
 
 
 class MuEnAirData:
