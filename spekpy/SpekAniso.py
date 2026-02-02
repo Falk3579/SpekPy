@@ -23,10 +23,13 @@ else:
 # ... and L x rays from an x-ray tube. NIM B 2018;437:36-47.
 #[2] Omar A, Andreo P and Poludniowski G. A model for the energy and angular 
 # ... distribution of x rays emitted from an x-ray tube. Part I. 
-# ... Bremsstrahlung production. Accepted by Med Phys 2020.
+# ... Bremsstrahlung production. Med Phys. 2020;47(10):4763-4774.
 #[3] Omar A, Andreo P and Poludniowski G. A model for the energy and angular 
-# ... distribution of x rays emitted from an x-ray tube. Part II. 
-# ... Validation of x-ray spectra from 20 to 300 kV. Accepted by Med Phys 2020.
+# ... distribution of x rays emitted from an x-ray tube. Part II. Validation
+# ... of x-ray spectra from 20 to 300 kV. Med Phys. 2020;47(9):4005-4019.
+#[4] Poludniowski G and Omar A. The SpekPy toolkit for modelling x-ray tube
+# ... spectra: extension to transmission targets and additional target materials
+# ... Appl Radiat Isot. 2026;229:112374. 
 
 class SpekAniso:
 
@@ -157,7 +160,7 @@ class SpekAniso:
         logmac_fn = interp.interp1d(logk_data, logmac_data, kind = 'linear', 
                             fill_value = 'extrapolate',assume_sorted=True)
         # Extract density [g/cm**3]
-        rho = data['rho'].astype('float64')
+        rho = squeeze(data['rho'].astype('float64'))
         return logmac_fn, rho
 
     
@@ -237,10 +240,9 @@ class SpekAniso:
                     abs( cos( deg2rad( theta_e_data[:,None,None,None] ) ) ) * 
                     abs( sin( deg2rad( theta_e_data[:,None,None,None] ) ) ),
                     axis=0)
-            diversion = where( diversion_den > 0, 
-                      divide(diversion_num, diversion_den, 
-                                where = diversion_den > 0),
-                                2)
+            default_override = zeros(diversion_num.shape) + 2e0
+            diversion = divide(diversion_num, diversion_den, out = default_override,
+                                where = diversion_den > 0)
             # Correct NE from explicit diversion factor to diversion = 2 
             NE_data = NE_data * 2. / diversion
             # Determine expected normalization (NE integrated over
@@ -922,7 +924,8 @@ class SpekAniso:
                                sin(abs(self.varphi))**-1 * cos(self.vartheta)**-1 )
             # Characteristic freq. dist. per solid angle per keV, with the
             # ... self-filtration removed (applied again outside this class)
-            char_kx[i,:] = divide(char_kx[i,:],attn_factor,
+            default_override = zeros(attn_factor.shape)
+            char_kx[i,:] = divide(char_kx[i,:],attn_factor,out=default_override,
                         where=attn_factor>finfo(dtype='float64').resolution)
     
         if self.shape == 'kqp' or self.shape == 'sim':
