@@ -34,7 +34,7 @@ def compare_dicts(dict1, dict2, atol=1e-8):
             nrmsd=np.sqrt(np.mean((ans1 - ans2)**2)) \
                 /(np.max(ans1)-np.min(ans1))
             if not np.isclose(nrmsd, 0.0, atol=atol):
-                errors.append(item+': nrmsd(ref-calc)='+str(rmsd))
+                errors.append(item+': nrmsd(ref-calc)='+str(nrmsd))
     return errors
 
 # Function to generates reference values for the get_std_results() method of 
