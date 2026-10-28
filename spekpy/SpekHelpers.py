@@ -1,6 +1,6 @@
 # For compatibility with Python2 #
-from __future__ import print_function, division, absolute_import
 import sys
+
 if sys.version_info[0] < 3:
     BYTES=str
     STR = unicode
@@ -8,9 +8,9 @@ else:
     BYTES = bytes
     STR = str
 ##################################
+import time as tm
 from collections import OrderedDict
 from datetime import datetime as dt
-import time as tm
 
 
 def get_current_time_stamp(mode='str'):

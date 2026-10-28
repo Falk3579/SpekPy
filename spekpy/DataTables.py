@@ -1,10 +1,12 @@
 # For compatibility with Python2 #
-from __future__ import print_function, division, absolute_import
+
 ##################################
 import numpy as np
-import spekpy.SpekConstants as Const
 from scipy import interpolate
-from spekpy.IO import full_file, find_file, read_json_from_disk
+
+import spekpy.SpekConstants as Const
+from spekpy.IO import find_file, full_file, read_json_from_disk
+
 
 def get_data():
     """
@@ -88,7 +90,6 @@ class MuData:
             np.array(data['photon energy'],dtype=object)
         self.mu_over_rho_coefficients = \
             np.array(data['mu_over_rho'],dtype=object)
-        return
 
     def get_mu_over_rho(self, atomic_number_element, energy_grid):
         """
@@ -227,7 +228,6 @@ class MuEnData:
             np.array(data['photon energy'],dtype=object)
         self.muen_over_rho_coefficients = \
             np.array(data['muen_over_rho'],dtype=object)
-        return
 
     def get_muen_over_rho(self, atomic_number_element, energy_grid):
         """
@@ -337,7 +337,6 @@ class MuEnAirData:
             np.array(data['photon energy'])
         self.muen_over_rho_air_coefficients = \
             np.array(data['muen_over_rho_air'])
-        return
 
     def get_muen_over_rho_air(self, energy_grid):
         """
@@ -395,7 +394,6 @@ class MuEnWaterData:
             np.array(data['photon energy'])
         self.muen_over_rho_water_coefficients = \
             np.array(data['muen_over_rho_water'])
-        return
 
     def get_muen_over_rho_water(self, energy_grid):
         """
@@ -442,7 +440,6 @@ class BremData:
         self.electron_kinetic_energy = np.array(data['ebr'])
         self.brem_photon_energy_fraction = np.array(data['ubr'])
         self.brem_scaled_xsection = np.array(data['xbr'])
-        return
 
     def get_cross_section_interpolator(self):
         """

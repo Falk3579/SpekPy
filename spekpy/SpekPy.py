@@ -1,26 +1,45 @@
 # For compatibility with Python2 #
-from __future__ import print_function, division, absolute_import
-##################################
-from . import __version__
-import spekpy.SpekConstants as Const
-from spekpy.IO import find_file, path_file, read_spectrum_from_disk, \
-    get_script_path, is_file, print_matl_info, print_matls_in_group, \
-    print_states, print_matls, delete_file
-from spekpy.SpekState import State, FiltrationDef
-from spekpy.SpekModel import SpekModel
+
 import copy
-from spekpy.SpekTools import load_mu_data, change_filtration, \
-    calculate_kerma_from_spectrum, calculate_mean_energy_from_spectrum, \
-    calculate_effective_energy_from_spectrum, calculate_fluence_from_spectrum,\
-    calculate_required_filter_thickness, \
-    calculate_first_half_value_layer_from_spectrum, \
-    calculate_second_half_value_layer_from_spectrum, \
-    calculate_output_arrays, \
-    calculate_homogeneity_coefficient_from_spectrum, \
-    StandardResults, generate_spectrum, make_composition_def
-from spekpy.DataTables import data
+
 from numpy import isclose
 from scipy.ndimage import gaussian_filter
+
+import spekpy.SpekConstants as Const
+from spekpy.DataTables import data
+from spekpy.IO import (
+    delete_file,
+    find_file,
+    get_script_path,
+    is_file,
+    path_file,
+    print_matl_info,
+    print_matls,
+    print_matls_in_group,
+    print_states,
+    read_spectrum_from_disk,
+)
+from spekpy.SpekModel import SpekModel
+from spekpy.SpekState import FiltrationDef, State
+from spekpy.SpekTools import (
+    StandardResults,
+    calculate_effective_energy_from_spectrum,
+    calculate_first_half_value_layer_from_spectrum,
+    calculate_fluence_from_spectrum,
+    calculate_homogeneity_coefficient_from_spectrum,
+    calculate_kerma_from_spectrum,
+    calculate_mean_energy_from_spectrum,
+    calculate_output_arrays,
+    calculate_required_filter_thickness,
+    calculate_second_half_value_layer_from_spectrum,
+    change_filtration,
+    generate_spectrum,
+    load_mu_data,
+    make_composition_def,
+)
+
+##################################
+from . import __version__
 
 
 class Spek:
@@ -191,7 +210,7 @@ class Spek:
         :param kwargs: Keyword arguments that are supported by the spekpy state
         :return :
         """
-        if 'physics' in kwargs.keys():
+        if 'physics' in kwargs:
             kwargs['physics'] = self.alias(kwargs['physics'])
         initial_state = copy.deepcopy(self.state)
         if kwargs:
@@ -295,8 +314,8 @@ class Spek:
                 raise Exception('Keyword argument '+ keyword +' not recognized')
  
     
-        if getattr(calc_params, 'ref_kerma') is not None and \
-            getattr(calc_params, 'ref_flu') is not None:
+        if calc_params.ref_kerma is not None and \
+            calc_params.ref_flu is not None:
             raise Exception("A reference air Kerma and reference fluence "
                             "cannot both be specified!")
        

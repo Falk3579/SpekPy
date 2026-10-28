@@ -1,14 +1,19 @@
 # For compatibility with Python2 #
-from __future__ import print_function, division, absolute_import
-##################################
-from spekpy.SpekHelpers import get_current_time_stamp, format_parameter_str \
-    as fmt_param, ord_dct
-from spekpy.IO import write_json_to_disk, read_json_from_disk, \
-    write_spectrum_to_disk, full_file
+
 import spekpy.SpekConstants as Const
+from spekpy.IO import (
+    full_file,
+    read_json_from_disk,
+    write_json_to_disk,
+    write_spectrum_to_disk,
+)
+from spekpy.SpekHelpers import format_parameter_str as fmt_param
+
+##################################
+from spekpy.SpekHelpers import get_current_time_stamp, ord_dct
 
 
-class State(object):
+class State:
     """
     A class to track, import and save the state of a spekpy instance
     """
@@ -360,7 +365,7 @@ class State(object):
         return data
 
 
-class ExternalSpectrumDef(object):
+class ExternalSpectrumDef:
     """
     A class to hold information on an external spectrum
     """
@@ -371,7 +376,7 @@ class ExternalSpectrumDef(object):
         self.ext_mas = None
 
 
-class ModelParameterDef(object):
+class ModelParameterDef:
     """
     A class to hold information on a spectrum model
     """
@@ -387,7 +392,7 @@ class ModelParameterDef(object):
         self.thick = None
 
 
-class SpekpyFlagsDef(object):
+class SpekpyFlagsDef:
     """
     A class to hold information on spectrum flags
     """
@@ -398,7 +403,7 @@ class SpekpyFlagsDef(object):
         self.flu_normalized_spectrum = False
 
 
-class SpectrumParameterDef(object):
+class SpectrumParameterDef:
     """
     A class to hold information on spectrum parameters
     """
@@ -414,7 +419,7 @@ class SpectrumParameterDef(object):
         self.ref_flu = None
 
 
-class FiltrationDef(object):
+class FiltrationDef:
     """
     A class to hold information on extrinsic filtration (inherent plus added,
     but not anode self-filtration)

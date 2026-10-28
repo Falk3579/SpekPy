@@ -1,5 +1,5 @@
 # For compatibility with Python2 #
-from __future__ import print_function, division, absolute_import
+
 ##################################
 import numpy as np
 
@@ -17,7 +17,7 @@ geometry_factor = 1.0 / (4.0 * np.pi)  # Geometry factor (converts to per unit
 atomic_number_tungsten = 74  # Atomic number Tungsten
 atomic_weight_tungsten = 183.8  # Atomic weight Tungsten [g]
 density_tungsten = 19.3  # Density Tungsten [g/cm^3]
-phi0 = atomic_number_tungsten ** 2 * electron_radius ** 2 * fine_structure  #
+phi0 = atomic_number_tungsten ** 2 * electron_radius ** 2 * fine_structure
 density_air = 1.205E-03  # Density air [g/cm^3]
 
 # Edge energies for Characteristic Emission 

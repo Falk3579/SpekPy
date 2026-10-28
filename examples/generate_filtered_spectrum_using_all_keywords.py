@@ -1,8 +1,7 @@
 # For compatibility with Python2
-from __future__ import print_function, division, absolute_import
-#
 
 import spekpy as sp
+
 print("\n**Script to generate a filtered spectrum specifying all keywords and print summary of metrics **\n")
 
 kvp = 90 # Tube potential in kV (default: 100)

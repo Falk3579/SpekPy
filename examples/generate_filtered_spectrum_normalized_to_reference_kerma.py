@@ -1,8 +1,7 @@
 # For compatibility with Python2
-from __future__ import print_function, division, absolute_import
-#
 
 import spekpy as sp
+
 print("\n**Script to generate a filtered spectrum normalized to a reference air kerma **\n")
 
 # Generate unfiltered spectrum

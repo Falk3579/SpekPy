@@ -1,16 +1,44 @@
 # For compatibility with Python2 #
-from __future__ import print_function, division, absolute_import
+
 ##################################
 import os
-from numpy import sin, cos, arctan, arccos, deg2rad, degrees
-from numpy import exp, sqrt, log, sum, abs, floor, round, divide
-from numpy import pi, nan
-from numpy import array, zeros, ones, insert, squeeze, meshgrid, arange
-from numpy import argmax, where, linspace, matmul, minimum, maximum
-from numpy import load, finfo
+
 import scipy.interpolate as interp
-from scipy.ndimage import map_coordinates
+from numpy import (
+    abs,
+    arange,
+    arccos,
+    arctan,
+    argmax,
+    array,
+    cos,
+    deg2rad,
+    degrees,
+    divide,
+    exp,
+    finfo,
+    floor,
+    insert,
+    linspace,
+    load,
+    log,
+    matmul,
+    meshgrid,
+    minimum,
+    nan,
+    ones,
+    pi,
+    round,
+    sin,
+    sqrt,
+    squeeze,
+    sum,
+    where,
+    zeros,
+)
 from scipy import __version__ as sci_vers
+from scipy.ndimage import map_coordinates
+
 major = int(sci_vers.split('.')[0])
 minor = int(sci_vers.split('.')[1])
 if major > 1 or (minor > 5 and major ==1):
