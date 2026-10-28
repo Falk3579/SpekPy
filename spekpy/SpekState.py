@@ -343,14 +343,13 @@ class State:
         if not file_name:
             file_name = 'spekpy_state_' + get_current_time_stamp(mode='file') \
                 + Const.extension_state_file
-        
-        if not file_name[-4:] == Const.extension_state_file:
-            file_name = file_name + Const.extension_state_file
 
-        
+        if not file_name.endswith(Const.extension_state_file):
+                file_name += Const.extension_state_file        
+
         file_name_full = full_file(Const.dir_data, Const.dir_state_usr, 
                                    file_name)
-        
+
         state = self.prepare_save_state(file_name, comment)
         write_json_to_disk(state, file_name_full)
 
