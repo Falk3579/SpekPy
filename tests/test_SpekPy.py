@@ -1,18 +1,20 @@
 # For compatibility with Python2 #
-from __future__ import print_function, division, absolute_import
-##################################
 
-import spekpy as sp
-from spekpy.IO import write_json_to_disk, read_json_from_disk
+import os
+import sys
+
 import numpy as np
-import sys, os
+
+##################################
+import spekpy as sp
+from spekpy.IO import read_json_from_disk, write_json_to_disk
 
 # Directory for test files and data
 testdir='tests'
 
 # Function to convert a class to a dictionary
 def dict_from_class(cls):
-    class A(object):
+    class A:
         pass
     _excluded_keys = set(A.__dict__.keys())
     dict_out = dict((key, value) for (key, value) in cls.__dict__.items() 
@@ -52,13 +54,11 @@ def generate_values_for_get_std_results(physics_choice):
     # Save reference resullts using json
     write_json_to_disk(dict2,physics_choice + 
                        '_values_for_get_std_results.json')
-    return
 
 # Function to generates reference values for all methods of interest for the
 # ... Spek Class
 def generate_values(physics_choice):
     generate_values_for_get_std_results(physics_choice)
-    return
 
 # Reference spectrum definition
 def spek_ref(physics_choice="default"):

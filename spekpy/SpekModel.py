@@ -1,17 +1,17 @@
 # For compatibility with Python2 #
-from __future__ import print_function, division, absolute_import
+
 ##################################
 import numpy as np
 from scipy import __version__ as sci_vers
+
 major = int(sci_vers.split('.')[0])
 minor = int(sci_vers.split('.')[1])
 if major > 1 or (minor > 5 and major ==1):
     from scipy.integrate import simpson as simps
 else:
-    from scipy.integrate import simps as simps    
-import spekpy.SpekConstants as Const
+    from scipy.integrate import simps as simps
 import spekpy.SpekAniso as aniso
-
+import spekpy.SpekConstants as Const
 
 ## References (Note: Ref. 1-3 describe "legacy" model i.e. SpekCalc)
 #[1] Poludniowski G, Evans PM. Calculation of x-ray spectra emerging from an 
@@ -193,22 +193,22 @@ class SpekModel:
             K_line_production = model_param['nK']
     
             if model_param['depth'] == 'csda' \
-                and type(model_param['scale']) == type(None):
+                and (model_param['scale'] is None):
                 E0_ref = E0
                 scale = 1.0
                 max_emission_depth = csda_range * 0.5
             elif model_param['depth'] == 'csda' \
-                and type(model_param['scale']) != type(None):
+                and (model_param['scale'] is not None):
                 E0_ref =  model_param['scale']
                 scale = 1.0
                 max_emission_depth = csda_range * 0.5
             elif model_param['depth'] == 'tw' \
-                and type(model_param['scale']) == type(None):
+                and (model_param['scale'] is None):
                 E0_ref = E0
                 scale = 1.0 
                 max_emission_depth = tw_range
             elif model_param['depth'] == 'tw' \
-                and type(model_param['scale']) != type(None):
+                and (model_param['scale'] is not None):
                 E0_ref =  model_param['scale']
                 scale = (self.__electron_range_tw(E0) 
                          / self.__electron_range_tw(E0_ref)) \

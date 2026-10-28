@@ -1,9 +1,9 @@
 # For compatibility with Python2
-from __future__ import print_function, division, absolute_import
-#
+
+import numpy as np
 
 import spekpy as sp
-import numpy as np
+
 print("\n**Script to clone a spectrum **\n")
 
 # Generate unfiltered spectrum

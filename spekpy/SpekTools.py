@@ -1,26 +1,35 @@
 # For compatibility with Python2 #
-from __future__ import print_function, division, absolute_import
+
+import numpy as np
+from scipy import __version__ as sci_vers
+from scipy import interpolate, optimize
+
 ##################################
 from . import __version__
-import numpy as np
-from scipy import optimize, interpolate
-from scipy import __version__ as sci_vers
+
 major = int(sci_vers.split('.')[0])
 minor = int(sci_vers.split('.')[1])
 if major > 1 or (minor > 5 and major ==1):
-    from scipy.integrate import trapezoid as trapz
     from scipy.integrate import simpson as simps
+    from scipy.integrate import trapezoid as trapz
 else:
-    from scipy.integrate import trapz as trapz
     from scipy.integrate import simps as simps
+    from scipy.integrate import trapz as trapz
 import re
 import warnings
-from copy import deepcopy
 from collections import OrderedDict as ord_dct
+from copy import deepcopy
+
 import spekpy.SpekConstants as Const
-from spekpy.DataTables import MuData, MuEnData, MuEnAirData, MuEnWaterData
-from spekpy.IO import write_json_to_disk, full_file
-from spekpy.DataTables import get_atomic_weight_data
+from spekpy.DataTables import (
+    MuData,
+    MuEnAirData,
+    MuEnData,
+    MuEnWaterData,
+    get_atomic_weight_data,
+)
+from spekpy.IO import full_file, write_json_to_disk
+
 
 def load_mu_data(mu_data_source):
     """

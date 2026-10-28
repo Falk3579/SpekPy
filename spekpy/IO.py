@@ -1,6 +1,6 @@
 # For compatibility with Python2 #
-from __future__ import print_function, division, absolute_import
 import sys
+
 if sys.version_info[0] < 3:
     BYTES = str
     STR = unicode
@@ -8,10 +8,13 @@ else:
     BYTES = bytes
     STR = str
 ##################################
-import sys, os
-from collections import OrderedDict
 import json
+import os
+import sys
+from collections import OrderedDict
+
 import numpy as np
+
 import spekpy.SpekConstants as Const
 
 PATH = os.path.dirname(os.path.abspath(__file__))
@@ -262,7 +265,6 @@ def delete_file(file_name_parts):
         os.remove(file_name_with_path)
     else:
         print("Unable to delete specified file (it does not exist)")
-    return
 
 def print_matls(matl_dir=None):
     """

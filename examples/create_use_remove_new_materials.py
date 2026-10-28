@@ -1,8 +1,7 @@
 # For compatibility with Python2
-from __future__ import print_function, division, absolute_import
-#
 
 import spekpy as sp
+
 print("\n** Script to create use and remove new materials **\n")
 
 # Generate filtered spectrum

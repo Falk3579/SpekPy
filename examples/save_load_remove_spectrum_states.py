@@ -1,8 +1,7 @@
 # For compatibility with Python2
-from __future__ import print_function, division, absolute_import
-#
 
 import spekpy as sp
+
 print("\n** Script to save, load and remove a new spectrum from disk **\n")
 
 # Generate filtered spectrum

@@ -1,9 +1,9 @@
 # For compatibility with Python2
-from __future__ import print_function, division, absolute_import
-#
+
+import numpy as np
 
 import spekpy as sp
-import numpy as np
+
 try:
     from matplotlib import pyplot as plt
 except:
