@@ -85,7 +85,10 @@ def check_sdist(sdist: Path, expected: dict[str, int]) -> None:
             if len(parts) < 3:
                 continue
             name = Path(*parts[1:]).as_posix()
-            if name.startswith("spekpy/data/") and Path(name).suffix in RESOURCE_SUFFIXES:
+            if (
+                name.startswith("spekpy/data/")
+                and Path(name).suffix in RESOURCE_SUFFIXES
+            ):
                 members[name] = item
         check_manifest(
             "sdist", {name: item.size for name, item in members.items()}, expected

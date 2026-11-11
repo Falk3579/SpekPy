@@ -36,31 +36,11 @@ jobs:
       - name: Install locked development dependencies
         run: uv sync --locked
 
-      - name: Generate Ruff cleanup for review (temporary)
-        run: |
-          uv run --locked ruff check --fix . || true
-          uv run --locked ruff format .
-          uv run --locked ruff check . || true
-          python - <<'PY'
-          import base64
-          import gzip
-          import json
-          import subprocess
-          from pathlib import Path
+      - name: Check Ruff lint
+        run: uv run --locked ruff check .
 
-          paths = [
-              p for p in subprocess.check_output(
-                  ["git", "diff", "--name-only"], text=True
-              ).splitlines() if p.endswith(".py")
-          ]
-          changes = {name: Path(name).read_text(encoding="utf-8") for name in paths}
-          payload = base64.b64encode(gzip.compress(json.dumps(changes).encode())).decode()
-          print("PR4_FORMAT_BEGIN")
-          for i in range(0, len(payload), 180):
-              print("PR4_FORMAT_CHUNK:" + payload[i:i + 180])
-          print("PR4_FORMAT_END")
-          print(f"Ruff modified {len(changes)} Python files.")
-          PY
+      - name: Check Ruff formatting
+        run: uv run --locked ruff format --check .
 
       - name: Run numerical regression tests outside checkout
         run: |

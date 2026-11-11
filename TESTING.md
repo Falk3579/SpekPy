@@ -52,3 +52,18 @@ Bundled reference data remain unchanged.
 releases and an uv-managed Python 3.11 environment. The development dependency
 group includes Ruff and Pyrefly for the later linting and typing phases;
 those checks are not enforced by this packaging PR.
+
+## Ruff
+
+Run the same checks as CI:
+
+```sh
+uv run --locked ruff check .
+uv run --locked ruff format --check .
+```
+
+To apply mechanical fixes locally, run `uv run --locked ruff check --fix .`
+and `uv run --locked ruff format .`. Review changes before committing,
+especially in the numerical model. Existing percent-style formatting is
+intentionally excluded from the modernization rule `UP031` to avoid changing
+established output representations.
