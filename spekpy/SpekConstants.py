@@ -101,6 +101,8 @@ units_energy = "keV"
 units_boolean = "bool"
 units_flu = "Photons cm^-2"
 units_flu_norm_mas = "Photons cm^-2 mAs^-1"
+
+
 def units_flu_norm_kerma(ref_kerma):
     return "Photons cm^-2 (%.2f uGy)^-1" % ref_kerma
 
