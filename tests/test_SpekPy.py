@@ -2,6 +2,7 @@
 
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
 
@@ -10,7 +11,7 @@ import spekpy as sp
 from spekpy.IO import read_json_from_disk, write_json_to_disk
 
 # Directory for test files and data
-testdir='tests'
+testdir = str(Path(__file__).resolve().parent)
 
 # Function to convert a class to a dictionary
 def dict_from_class(cls):
@@ -81,9 +82,9 @@ if __name__=="__main__":
 ##################
 
 # Test function for export_spectum() and load_from_file() methods of Spek class
-def test_export_spectrum_and_load_from_file():
+def test_export_spectrum_and_load_from_file(tmp_path):
     s = spek_ref("default")
-    spek_name = 'Test_export_spectrum.spk'
+    spek_name = str(tmp_path / 'Test_export_spectrum.spk')
     # Reference values
     std_results_obj_1=s.get_std_results()
     s.export_spectrum(spek_name, comment='A test spectrum export')
