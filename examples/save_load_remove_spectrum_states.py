@@ -1,5 +1,3 @@
-# For compatibility with Python2
-
 import spekpy as sp
 
 print("\n** Script to save, load and remove a new spectrum from disk **\n")

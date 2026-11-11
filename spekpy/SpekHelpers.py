@@ -1,13 +1,3 @@
-# For compatibility with Python2 #
-import sys
-
-if sys.version_info[0] < 3:
-    BYTES=str
-    STR = unicode
-else:
-    BYTES = bytes
-    STR = str
-##################################
 import time as tm
 from collections import OrderedDict
 from datetime import datetime as dt
@@ -44,8 +34,7 @@ def format_parameter_str(parameter_name, parameter_value, parameter_unit,
     elif isinstance(parameter_value, bool) or parameter_value is None \
         or isinstance(parameter_value, list):
         the_value = str(parameter_value)
-    elif isinstance(parameter_value, BYTES) \
-        or isinstance(parameter_value, STR):
+    elif isinstance(parameter_value, str):
         the_value = parameter_value
     else:
         raise Exception('Could not format the parameter '+parameter_name+'!')

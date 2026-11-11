@@ -1,6 +1,4 @@
-# For compatibility with Python2 #
 
-##################################
 import numpy as np
 
 # Physical constants

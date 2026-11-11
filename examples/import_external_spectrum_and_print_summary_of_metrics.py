@@ -1,5 +1,3 @@
-# For compatibility with Python2
-
 import spekpy as sp
 
 print("\n** Script to import an external spectrum and print summary statistics **\n")

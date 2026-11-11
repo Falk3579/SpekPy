@@ -1,4 +1,3 @@
-# For compatibility with Python2 #
 
 import os
 import sys
@@ -6,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 
-##################################
 import spekpy as sp
 from spekpy.IO import read_json_from_disk, write_json_to_disk
 

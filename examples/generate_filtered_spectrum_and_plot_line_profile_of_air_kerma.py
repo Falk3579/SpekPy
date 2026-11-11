@@ -1,5 +1,3 @@
-# For compatibility with Python2
-
 import numpy as np
 
 import spekpy as sp

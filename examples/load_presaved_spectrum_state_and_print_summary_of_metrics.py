@@ -1,5 +1,3 @@
-# For compatibility with Python2
-
 import spekpy as sp
 
 print("\n** Script to load a standard spectrum state from disk and print summary of metrics **\n")

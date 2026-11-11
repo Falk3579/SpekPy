@@ -1,15 +1,6 @@
-# For compatibility with Python2 #
 
-##################################
 import numpy as np
-from scipy import __version__ as sci_vers
-
-major = int(sci_vers.split('.')[0])
-minor = int(sci_vers.split('.')[1])
-if major > 1 or (minor > 5 and major ==1):
-    from scipy.integrate import simpson as simps
-else:
-    from scipy.integrate import simps as simps
+from scipy.integrate import simpson as simps
 import spekpy.SpekAniso as aniso
 import spekpy.SpekConstants as Const
 

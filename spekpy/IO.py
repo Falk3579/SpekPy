@@ -1,16 +1,5 @@
-# For compatibility with Python2 #
-import sys
-
-if sys.version_info[0] < 3:
-    BYTES = str
-    STR = unicode
-else:
-    BYTES = bytes
-    STR = str
-##################################
 import json
 import os
-import sys
 from collections import OrderedDict
 
 import numpy as np
@@ -29,7 +18,7 @@ def full_file(*args):
     :param str args: Variable number of parts
     :return str : The full path to a file
     """
-    if all(isinstance(arg, (STR, BYTES)) for arg in args):
+    if all(isinstance(arg, str) for arg in args):
         path_file = PATH + SLASH + SLASH.join(args)
         return path_file
     else:

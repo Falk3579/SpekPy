@@ -1,4 +1,3 @@
-# For compatibility with Python2 #
 
 import copy
 
@@ -38,7 +37,6 @@ from spekpy.SpekTools import (
     make_composition_def,
 )
 
-##################################
 from . import __version__
 
 

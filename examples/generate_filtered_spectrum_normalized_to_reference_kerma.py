@@ -1,5 +1,3 @@
-# For compatibility with Python2
-
 import spekpy as sp
 
 print("\n**Script to generate a filtered spectrum normalized to a reference air kerma **\n")

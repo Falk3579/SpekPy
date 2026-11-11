@@ -1,4 +1,3 @@
-# For compatibility with Python2 #
 
 import spekpy.SpekConstants as Const
 from spekpy.IO import (
@@ -9,7 +8,6 @@ from spekpy.IO import (
 )
 from spekpy.SpekHelpers import format_parameter_str as fmt_param
 
-##################################
 from spekpy.SpekHelpers import get_current_time_stamp, ord_dct
 
 

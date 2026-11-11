@@ -1,20 +1,11 @@
-# For compatibility with Python2 #
 
 import numpy as np
-from scipy import __version__ as sci_vers
 from scipy import interpolate, optimize
 
-##################################
-from . import __version__
+from scipy.integrate import simpson as simps
+from scipy.integrate import trapezoid as trapz
 
-major = int(sci_vers.split('.')[0])
-minor = int(sci_vers.split('.')[1])
-if major > 1 or (minor > 5 and major ==1):
-    from scipy.integrate import simpson as simps
-    from scipy.integrate import trapezoid as trapz
-else:
-    from scipy.integrate import simps as simps
-    from scipy.integrate import trapz as trapz
+from . import __version__
 import re
 import warnings
 from collections import OrderedDict as ord_dct
