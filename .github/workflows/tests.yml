@@ -1,4 +1,4 @@
-name: Tests
+name: Tests and package verification
 
 on:
   push:
@@ -10,21 +10,82 @@ permissions:
 
 jobs:
   pytest:
-    name: pytest (Python 3.11)
+    name: pytest and distributions (Python 3.11)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
-      - name: Install test dependencies
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "latest-known"
+          enable-cache: true
+
+      - name: Generate initial uv lockfile
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e . pytest
-      - name: Run scientific regression tests outside repository root
+          uv lock
+          python - <<'PY'
+          import base64
+          import gzip
+          from pathlib import Path
+
+          compressed = gzip.compress(Path("uv.lock").read_bytes())
+          encoded = base64.b64encode(compressed).decode("ascii")
+          print("UV_LOCK_BEGIN")
+          for start in range(0, len(encoded), 180):
+              print("UV_LOCK_CHUNK:" + encoded[start:start + 180])
+          print("UV_LOCK_END")
+          PY
+
+      - name: Install locked development dependencies
+        run: uv sync --locked
+
+      - name: Run numerical regression tests outside checkout
         run: |
           cd "$RUNNER_TEMP"
-          python -m pytest "$GITHUB_WORKSPACE/tests" -q
+          "$GITHUB_WORKSPACE/.venv/bin/python" -m pytest "$GITHUB_WORKSPACE/tests" -q
+
+      - name: Build wheel and source distribution
+        run: uv build
+
+      - name: Verify bundled scientific resources
+        run: uv run --locked python scripts/verify_dist.py
+
+      - name: Test wheel in a clean environment
+        run: |
+          uv venv "$RUNNER_TEMP/wheel-env" --python 3.11
+          uv pip install --python "$RUNNER_TEMP/wheel-env/bin/python" dist/*.whl pytest
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/wheel-env/bin/python" - <<'PY'
+          import os
+          from pathlib import Path
+          import spekpy
+          assert Path(spekpy.__file__).is_relative_to(
+              Path(os.environ["RUNNER_TEMP"]) / "wheel-env"
+          ), f"Imported SpekPy from unexpected path: {spekpy.__file__}"
+          print(f"Installed SpekPy {spekpy.__version__} from {spekpy.__file__}")
+          PY
+          "$RUNNER_TEMP/wheel-env/bin/python" -m pytest "$GITHUB_WORKSPACE/tests" -q
+
+      - name: Test source distribution in a clean environment
+        run: |
+          uv venv "$RUNNER_TEMP/sdist-env" --python 3.11
+          uv pip install --python "$RUNNER_TEMP/sdist-env/bin/python" dist/*.tar.gz
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/sdist-env/bin/python" - <<'PY'
+          import math
+          from spekpy import Spek
+          spectrum = Spek(kvp=80)
+          assert math.isfinite(spectrum.get_kerma())
+          assert len(spectrum.get_spectrum()[0]) > 0
+          print("Installed sdist passed calculation smoke test.")
+          PY
