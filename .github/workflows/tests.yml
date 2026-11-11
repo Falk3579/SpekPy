@@ -30,21 +30,8 @@ jobs:
           version: "latest-known"
           enable-cache: true
 
-      - name: Generate initial uv lockfile
-        run: |
-          uv lock
-          python - <<'PY'
-          import base64
-          import gzip
-          from pathlib import Path
-
-          compressed = gzip.compress(Path("uv.lock").read_bytes())
-          encoded = base64.b64encode(compressed).decode("ascii")
-          print("UV_LOCK_BEGIN")
-          for start in range(0, len(encoded), 180):
-              print("UV_LOCK_CHUNK:" + encoded[start:start + 180])
-          print("UV_LOCK_END")
-          PY
+      - name: Verify committed uv.lock is up to date
+        run: uv lock --check
 
       - name: Install locked development dependencies
         run: uv sync --locked
