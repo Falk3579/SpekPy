@@ -8,7 +8,6 @@ No third-party dependencies are needed to run this check.
 from __future__ import annotations
 
 import hashlib
-import sys
 import tarfile
 import zipfile
 from pathlib import Path
@@ -112,6 +111,9 @@ def main() -> None:
     expected = source_manifest()
     check_wheel(wheels[0], expected)
     check_sdist(sdists[0], expected)
+    for artifact in (wheels[0], sdists[0]):
+        size_mib = artifact.stat().st_size / (1024 * 1024)
+        print(f"{artifact.name}: {size_mib:.1f} MiB")
     print("All packaged scientific data matches the source tree.")
 
 
