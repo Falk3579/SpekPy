@@ -24,5 +24,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e . pytest
-      - name: Run scientific regression tests
-        run: python -m pytest tests -q
+      - name: Run scientific regression tests outside repository root
+        run: |
+          cd "$RUNNER_TEMP"
+          python -m pytest "$GITHUB_WORKSPACE/tests" -q
