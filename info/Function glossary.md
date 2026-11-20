@@ -7,75 +7,75 @@
 
 ## Miscellaneous
 
-[filter()](#markdown-header-filter)
+[filter()](#filter)
 
-[multi_filter()](#markdown-header-multi_filter)
+[multi_filter()](#multi_filter)
 
-[set()](#markdown-header-set)
+[set()](#set)
 
-[clone()](#markdown-header-clone)
+[clone()](#clone)
 
-[summarize()](#markdown-header-summarize)
+[summarize()](#summarize)
 
-[comment()](#markdown-header-comment)
+[comment()](#comment)
 
 ## Extracting values and metrics
 
-In addition to any arguments explicitly specified in the function descriptions, the following keyword arguments (kwargs) can be specified: *x, y, z, mas, brem, char, obli*. See [here](Further%20information) for further information on these keyword arguments.
+In addition to any arguments explicitly specified in the function descriptions, the following keyword arguments (kwargs) can be specified: *x, y, z, mas, brem, char, obli*. See [here](Further%20information.md) for further information on these keyword arguments.
 
-[get_k()](#markdown-header-get_k)
+[get_k()](#get_k)
 
-[get_spk()](#markdown-header-get_spk)
+[get_spk()](#get_spk)
 
-[get_spectrum()](#markdown-header-get_spectrum)
+[get_spectrum()](#get_spectrum)
 
-[get_kerma()](#markdown-header-get_kerma)
+[get_kerma()](#get_kerma)
 
-[get_hvl1()](#markdown-header-get_hvl1)
+[get_hvl1()](#get_hvl1)
 
-[get_hvl()](#markdown-header-get_hvl)
+[get_hvl()](#get_hvl)
 
-[get_hvl2()](#markdown-header-get_hvl2)
+[get_hvl2()](#get_hvl2)
 
-[get_hc()](#markdown-header-get_hc)
+[get_hc()](#get_hc)
 
-[get_emean()](#markdown-header-get_emean)
+[get_emean()](#get_emean)
 
-[get_eeff()](#markdown-header-get_eeff)
+[get_eeff()](#get_eeff)
 
-[get_matl()](#markdown-header-get_matl)
+[get_matl()](#get_matl)
 
-[get_flu()](#markdown-header-get_flu)
+[get_flu()](#get_flu)
 
-[get_eflu()](#markdown-header-get_eflu)
+[get_eflu()](#get_eflu)
 
-[get\_norm\_flu()](#markdown-header-get_norm_flu)
+[get\_norm\_flu()](#get_norm_flu)
 
-[get\_std\_results()](#markdown-header-get_std_results)
+[get\_std\_results()](#get_std_results)
 
 ## Materials
 
-[make_matl()](#markdown-header-make_matl)
+[make_matl()](#make_matl)
 
-[remove_matl()](#markdown-header-remove_matl)
+[remove_matl()](#remove_matl)
 
-[show_matls()](#markdown-header-show_matls)
+[show_matls()](#show_matls)
 
 ## States
 
-[load_state()](#markdown-header-load_state)
+[load_state()](#load_state)
 
-[save_state()](#markdown-header-save_state)
+[save_state()](#save_state)
 
-[remove_state()](#markdown-header-remove_state)
+[remove_state()](#remove_state)
 
-[show_states()](#markdown-header-show_states)
+[show_states()](#show_states)
 
 ## Input/output
 
-[export_spectrum()](#markdown-header-export_spectrum)
+[export_spectrum()](#export_spectrum)
 
-[load\_from\_file()](#markdown-header-load_from_file)
+[load\_from\_file()](#load_from_file)
 
 ## clone
      
@@ -820,10 +820,10 @@ s.save_state(state_name)
 
     Purpose
     *******
-    Changes the SpekPy state, data or reference point. See 
-    [here](https://bitbucket.org/spekpy/spekpy_py2.7/wiki/Further%20information) for further information
-    on these keyword arguments.
+    Changes the SpekPy state, data or reference point.
     Note: calling set() without specifying ref_kerma or ref_flu will reset fluence normalization to default.
+
+For details on these keyword arguments, see [Further information](Further%20information.md).
 
 Usage:
 
