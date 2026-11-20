@@ -1,7 +1,7 @@
-[Home](https://bitbucket.org/spekpy/spekpy_release/src/master/ReadMe), 
-[Further information](https://bitbucket.org/spekpy/spekpy_release/src/master/info/Further%20information), 
-[Function glossary](https://bitbucket.org/spekpy/spekpy_release/src/master/info/Function%20glossary),
-[Release history](https://bitbucket.org/spekpy/spekpy_release/src/master/info/Release%20history),
+[Home](ReadMe.md), 
+[Further information](info/Further%20information.md), 
+[Function glossary](info/Function%20glossary.md),
+[Release history](info/Release%20history.md),
 
 # Welcome to the SpekPy homepage
 
