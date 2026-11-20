@@ -7,6 +7,7 @@ build-backend = "setuptools.build_meta"
 name = "spekpy"
 version = "2.5.6"
 description="A Python software toolkit for modelling the x-ray spectra from x-ray tubes"
+requires-python = ">=3.12"
 authors = [
     {name = "Gavin Poludniowski", email = "gpoludniowski@gmail.com"},
     {name = "Robert Bujila"},
@@ -41,3 +42,7 @@ spekpy = [
 "data/state_def/*.state",
 "data/tables/advanced/*.npz"
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
