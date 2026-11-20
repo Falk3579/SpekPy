@@ -23,18 +23,41 @@ def dict_from_class(cls):
 
 # Function to compare two dictionaries, element by element
 def compare_dicts(dict1, dict2, atol=1e-8):
-    errors=[]
-    for item in dict1:
-        ans1 = dict1[item]
-        ans2 = dict2[item]
-        if type(ans1) == np.float64:
-            if not np.isclose(ans1, ans2, atol = atol):
-                errors.append(item+': ref='+str(ans1)+' calc='+str(ans2))
-        elif type(ans1) == np.ndarray:
-            nrmsd=np.sqrt(np.mean((ans1 - ans2)**2)) \
-                /(np.max(ans1)-np.min(ans1))
-            if not np.isclose(nrmsd, 0.0, atol=atol):
-                errors.append(item+': nrmsd(ref-calc)='+str(nrmsd))
+    errors = []
+
+    for item in sorted(dict1.keys() | dict2.keys()):
+        if item not in dict1 or item not in dict2:
+            errors.append(f"{item}: missing key")
+            continue
+
+        ref = np.asarray(dict1[item], dtype=float)
+        calc = np.asarray(dict2[item], dtype=float)
+
+        if ref.shape != calc.shape:
+            errors.append(
+                f"{item}: shape mismatch: "
+                f"ref={ref.shape}, calc={calc.shape}"
+            )
+            continue
+
+        if ref.ndim == 0:
+            if not np.isclose(ref, calc, atol=atol):
+                errors.append(
+                    f"{item}: ref={ref.item()} calc={calc.item()}"
+                )
+        else:
+            # Preserve the existing normalized RMSD comparison.
+            span = np.max(ref) - np.min(ref)
+
+            if span > 0:
+                nrmsd = np.sqrt(np.mean((ref - calc) ** 2)) / span
+                if not np.isclose(nrmsd, 0.0, atol=atol):
+                    errors.append(
+                        f"{item}: nrmsd(ref-calc)={nrmsd}"
+                    )
+            elif not np.allclose(ref, calc, atol=atol):
+                errors.append(f"{item}: arrays differ")
+
     return errors
 
 # Function to generates reference values for the get_std_results() method of 
