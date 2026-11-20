@@ -5,41 +5,41 @@
 
 # Further information
 
-[More about SpekPy](#markdown-header-more-about-spekpy)
+[More about SpekPy](#more-about-spekpy)
 
-[Target geometry](#markdown-header-target-geometry)
+[Target geometry](#target-geometry)
 
-[Physics models](#markdown-header-physics-models)
+[Physics models](#physics-models)
 
-[Arguments of the Spek class](#markdown-header-arguments-of-the-spek-class)
+[Arguments of the Spek class](#arguments-of-the-spek-class)
 
-[Function glossary](#markdown-header-function-glossary)
+[Function glossary](#function-glossary)
 
-[Validate your installation](#markdown-header-validate-your-installation)
+[Validate your installation](#validate-your-installation)
 
-[Check what the input parameter values are for a spectrum](#markdown-header-check-what-the-input-parameter-values-are-for-a-spectrum)
+[Check what the input parameter values are for a spectrum](#check-what-the-input-parameter-values-are-for-a-spectrum)
 
-[Specify a target material other than tungsten](#markdown-header-specify-a-target-material-other-than-tungsten)
+[Specify a target material other than tungsten](#specify-a-target-material-other-than-tungsten)
 
-[Specify a transmission target rather than reflection type tube](#markdown-header-specify-a-transmission-target-rather-than-reflection-type-tube)
+[Specify a transmission target rather than reflection type tube](#specify-a-transmission-target-rather-than-reflection-type-tube)
 
-[Get results that agree with SpekCalc](#markdown-header-get-results-that-agree-with-spekcalc)
+[Get results that agree with SpekCalc](#get-results-that-agree-with-spekcalc)
 
-[Isolate the bremsstrahlung or characteristic contribution](#markdown-header-isolate-the-bremsstrahlung-or-characteristic-contribution)
+[Isolate the bremsstrahlung or characteristic contribution](#isolate-the-bremsstrahlung-or-characteristic-contribution)
 
-[If you do not want to use the default photon attenuation coefficients](#markdown-header-if-you-do-not-want-to-use-the-default-photon-attenuation-coefficients)
+[If you do not want to use the default photon attenuation coefficients](#if-you-do-not-want-to-use-the-default-photon-attenuation-coefficients)
 
-[If you want predictions off the central-axis](#markdown-header-if-you-want-predictions-off-the-central-axis)
+[If you want predictions off the central-axis](#if-you-want-predictions-off-the-central-axis)
 
-[If you do not want the path-length through added filters to vary off-axis](#markdown-header-if-you-do-not-want-the-path-length-through-added-filters-to-vary-off-axis)
+[If you do not want the path-length through added filters to vary off-axis](#if-you-do-not-want-the-path-length-through-added-filters-to-vary-off-axis)
 
-[If you want to normalize the spectrum to a reference air kerma or integrated fluence](#markdown-header-if-you-want-to-normalize-the-spectrum-to-a-reference-air-kerma-or-integrated-fluence)
+[If you want to normalize the spectrum to a reference air kerma or integrated fluence](#if-you-want-to-normalize-the-spectrum-to-a-reference-air-kerma-or-integrated-fluence)
 
-[If you want to import an external spectrum](#markdown-header-if-you-want-to-import-an-external-spectrum)
+[If you want to import an external spectrum](#if-you-want-to-import-an-external-spectrum)
 
-[If you want to shift the energy bin centres](#markdown-header-if-you-want-to-shift-the-energy-bin-centres)
+[If you want to shift the energy bin centres](#if-you-want-to-shift-the-energy-bin-centres)
 
-[If you want to use SpekPy in MATLAB](#markdown-header-if-you-want-to-use-spekpy-in-matlab)
+[If you want to use SpekPy in MATLAB](#if-you-want-to-use-spekpy-in-matlab)
 
 ## More about SpekPy
 
