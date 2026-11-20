@@ -5,25 +5,25 @@
 
 # Welcome to the SpekPy homepage
 
-[What SpekPy is](#markdown-header-what-spekpy-is)
+[What SpekPy is](#what-spekpy-is)
 
-[What SpekPy is not](#markdown-header-what-spekpy-is-not)
+[What SpekPy is not](#what-spekpy-is-not)
 
-[Try before you install](#markdown-header-try-before-you-install)
+[Try before you install](#try-before-you-install)
 
-[How to install SpekPy](#markdown-header-how-to-install-spekpy)
+[How to install SpekPy](#how-to-install-spekpy)
 
-[How to use SpekPy](#markdown-header-how-to-use-spekpy)
+[How to use SpekPy](#how-to-use-spekpy)
 
-[The software license](#markdown-header-the-software-license)
+[The software license](#the-software-license)
 
-[About us](#markdown-header-about-us)
+[About us](#about-us)
 
-[Contacts](#markdown-header-contacts)
+[Contacts](#contacts)
 
-[Our book](#markdown-header-our-book)
+[Our book](#our-book)
 
-[How to reference SpekPy](#markdown-header-how-to-reference-spekpy)
+[How to reference SpekPy](#how-to-reference-spekpy)
 
 ## What SpekPy is
 
@@ -47,7 +47,7 @@ The easiest way to get started with SpekPy is via the web app. You can find the 
 
 Alternatively, the following button launches a Jupyter notebook running SpekPy:
 
-[![Binder](https://static.mybinder.org/badge_logo.svg)](https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fspekpy%2Fspekpy_release%2Fsrc%2Fmaster/HEAD?filepath=SpekPy-Notebook.ipynb)
+[![Binder](https://static.mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Falk3579/SpekPy/MuEn_Data?urlpath=lab/tree/SpekPy-Notebook.ipynb)
 
 Binder can be slow to load, but gives you a chance to try scripting with SpekPy before installing.
 
@@ -161,8 +161,7 @@ Please do let us know about any bugs. You can either email or raise an issue usi
 
 *Calculating X-ray Tube Spectra: Analytical and Monte Carlo Approaches*, by Gavin Poludniowski, Artur Omar, Pedro Andreo
 
-![Book cover](https://images.tandf.co.uk/common/jackets/crclarge/978100305/9781003058168.jpg
-)
+![Book cover](https://images.tandf.co.uk/common/jackets/crclarge/978100305/9781003058168.jpg)
 
 Key Features of CaXTuS:
 
