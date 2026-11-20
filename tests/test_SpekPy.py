@@ -10,7 +10,7 @@ import spekpy as sp
 from spekpy.IO import read_json_from_disk, write_json_to_disk
 
 # Directory for test files and data
-testdir='tests'
+testdir = os.path.dirname(os.path.abspath(__file__))
 
 # Function to convert a class to a dictionary
 def dict_from_class(cls):
