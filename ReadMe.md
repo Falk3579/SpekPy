@@ -27,7 +27,7 @@
 
 ## What SpekPy is
 
-SpekPy is a powerful and free software toolkit for calculating and manipulating the spectra of x-ray tubes. The code is written in the Python programming language. It can be used in a Python interpreter or from a Python script. For more information on SpekPy, please see [Further information](info/Further%20information).
+SpekPy is a powerful and free software toolkit for calculating and manipulating the spectra of x-ray tubes. The code is written in the Python programming language. It can be used in a Python interpreter or from a Python script. For more information on SpekPy, please see [Further information](info/Further%20information.md).
 
 Initially, SpekPy could only model x-ray tubes with the classic "reflection" geometry. With release v2.5.0, however, it was extended to model transmission targets. Currently it is capable of modelling both possibilities for several target materials. For W targets, tube potentials ranging from 10 to 500 kV can be selected. For Cr, Cu, Mo, Rh, Ag, Au targets, the more restricted range of 10 to 50 kV is possible. 
 
@@ -135,7 +135,7 @@ print(phi) # Print out the fluence
 
 ```
 
-To see a complete list of SpekPy tools (methods and functions), please take a look at the [Function glossary](info/Function%20glossary).
+To see a complete list of SpekPy tools (methods and functions), please take a look at the [Function glossary](info/Function%20glossary.md).
 
 ## The software license
 

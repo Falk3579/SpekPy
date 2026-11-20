@@ -1,7 +1,7 @@
-[ReadMe](../ReadMe),
-[Further information](Further%20information),
-[Function glossary](Function%20glossary),
-[Release history](Release%20history),
+[ReadMe](../ReadMe.md),
+[Further information](Further%20information.md),
+[Function glossary](Function%20glossary.md),
+[Release history](Release%20history.md),
 
 # Release history
 

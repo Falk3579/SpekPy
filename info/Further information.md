@@ -1,7 +1,7 @@
-[ReadMe](../ReadMe),
-[Further information](Further%20information),
-[Function glossary](Function%20glossary),
-[Release history](Release%20history),
+[ReadMe](../ReadMe.md),
+[Further information](Further%20information.md),
+[Function glossary](Function%20glossary.md),
+[Release history](Release%20history.md),
 
 # Further information
 
@@ -54,9 +54,9 @@ In SpekPy version 2.5, the toolkit was extended to model transmission targets. F
 
 ## Target geometry
 
-The target geometries for (a) reflection and (b) transmission target x-ray tubes are illustrated below,
+The target geometries for (a) reflection and (b) transmission target x-ray tubes are illustrated below.
 
-![here](https://bitbucket.org/spekpy/spekpy_release/src/master/diagram_of_target_geometry.png).
+![here](../diagram_of_target_geometry.png).
 
 In the inputs to the Spek() class, the keyword parameter 'th' represents the theta variable in the diagram, but in degrees rather than radians. The keyword parameter 'thick' represents the target thickness Ttarg, in the units of microns. The default angle is 12 degrees and -90 degrees, respectively, for the reflection and transmission cases.
 
@@ -134,7 +134,7 @@ thick | float | Thickness of the target layer in microns | Default value: *None*
 
 ## Function glossary
 
-Full descriptions of all the functions of the SpekPy toolkit are provided in [Function glossary](Function%20glossary). This is a good place to look to figure out how to use the toolkit (another good place is the examples--see below).
+Full descriptions of all the functions of the SpekPy toolkit are provided in [Function glossary](Function%20glossary.md). This is a good place to look to figure out how to use the toolkit (another good place is the examples--see below).
 
 ## Validate your installation
 
@@ -144,7 +144,7 @@ If you want to validate your local installation of SpekPy, you can use the *test
 pytest -vv
 ```
 
-This should give you a detailed breakdown of the testing process. If any tests fail, then you have a problem. You can contact us if you need help (see the Contacts section on the [home page](Home)).
+This should give you a detailed breakdown of the testing process. If any tests fail, then you have a problem. You can contact us if you need help (see the Contacts section in the [ReadMe](../ReadMe.md)).
 
 ## See some examples
 
